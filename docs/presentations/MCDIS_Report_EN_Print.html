@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>MCDIS Project Report</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #000;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 10mm auto;
+            background: white;
+            box-sizing: border-box;
+            position: relative;
+            page-break-after: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* Border */
+        .page::before {
+            content: "";
+            position: absolute;
+            top: 15mm;
+            left: 15mm;
+            right: 15mm;
+            bottom: 15mm;
+            border: 4px double #1a252f;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+        }
+
+        h1, h2, h3 {
+            color: #1a252f;
+        }
+
+        .cover-page {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 250mm;
+        }
+
+        .cover-page h1 {
+            font-size: 36pt;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .cover-page h2 {
+            font-size: 24pt;
+            color: #7f8c8d;
+            margin-bottom: 50px;
+        }
+
+        .cover-page h3 {
+            font-size: 18pt;
+            margin-top: 100px;
+        }
+
+        .section-title {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-left: 5px solid #2980b9;
+            margin-top: 30px;
+            font-size: 20pt;
+            page-break-after: avoid;
+        }
+
+        .text-body {
+            font-size: 14pt;
+            line-height: 1.8;
+            text-align: justify;
+            margin-top: 20px;
+        }
+
+        ul, ol {
+            font-size: 14pt;
+            line-height: 1.8;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #c0392b;
+        }
+
+        @media print {
+            body { background: none; }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                border: initial;
+                border-radius: initial;
+                width: initial;
+                min-height: initial;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cover Page -->
+    <div class="page">
+        <div class="content cover-page">
+            <h1 style="color: #2c3e50; font-weight: 900;">Technical Project Report</h1>
+            <h2>Multi-Modal Counter-Drone Intelligence System</h2>
+            <div style="font-size: 26pt; font-weight: bold; color: #2980b9; margin-top: 20px;">(MCDIS)</div>
+            
+            <h3 style="margin-top: 150px;">Prepared by</h3>
+            <p style="font-size: 18pt; font-weight: bold;">MCDIS Engineering Team</p>
+            <p style="font-size: 14pt; margin-top: 50px;">2026</p>
+        </div>
+    </div>
+
+    <!-- Page 2 -->
+    <div class="page">
+        <div class="content">
+            <h2 class="section-title">1. Introduction to Anti-Drone Systems</h2>
+            <div class="text-body">
+                With the rapid proliferation of Unmanned Aerial Vehicles (UAVs) in both commercial and military applications, the threat posed by malicious drone activity has increased exponentially. Anti-Drone systems are designed to detect, track, identify, and mitigate these threats. Modern solutions utilize a multi-layered approach combining various sensors and countermeasures to ensure total airspace security.
+            </div>
+
+            <h2 class="section-title">2. Core Countermeasure Systems</h2>
+            <div class="text-body">
+                To fully protect an area, our counter-drone strategy is categorized into three primary systems:
+            </div>
+
+            <h3>System 1: Attack & Interception System (Kinetic Hard-Kill)</h3>
+            <div class="text-body" style="margin-top:0;">
+                This system relies on physically neutralizing the drone using highly accurate <span class="highlight">Visual Detectors</span>.
+                <ul>
+                    <li><strong>Target Locking:</strong> The system actively detects the drone, locks onto it, and maintains a persistent track.</li>
+                    <li><strong>Interception Methods:</strong> Deploying surface-to-air missiles, interceptor drones with nets, or "Kamikaze" drones to ram the target.</li>
+                </ul>
+            </div>
+
+            <h3>System 2: Jamming & Electronic Warfare System (Soft-Kill)</h3>
+            <div class="text-body" style="margin-top:0;">
+                This system disables the drone by interfering with its communication and navigation operations:
+                <ul>
+                    <li><strong>Level 1 (Encrypted Comms):</strong> Disrupting military links.</li>
+                    <li><strong>Level 2 (RC Links):</strong> Jamming 2.4 GHz and 900 MHz remote control signals.</li>
+                    <li><strong>Level 3 (Video Transmission):</strong> Jamming 5.8 GHz and 1.x GHz video feeds.</li>
+                    <li><strong>Level 4 (GPS):</strong> Overwriting GPS on smart drones to hijack them, or jamming RC on FPV/Suicide drones so they crash. 
+                    <br><span class="highlight">Fiber-Optic Drones:</span> Modern drones tethered by wires bypass all EW jamming and must be engaged by the <strong>Attack System (Missile)</strong>.</li>
+                </ul>
+            </div>
+
+            <h3>System 3: Early Warning Radar System</h3>
+            <div class="text-body" style="margin-top:0;">
+                A powerful radar serves as the first line of defense, providing long-range detection and handing over coordinates to the visual and jamming systems for engagement.
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3 -->
+    <div class="page">
+        <div class="content">
+            <h2 class="section-title">3. Implemented Technologies in MCDIS</h2>
+            <div class="text-body">
+                We have successfully engineered a highly advanced, fully integrated software backbone (MCDIS) featuring:
+                <ol>
+                    <li><strong>AI Vision Pipeline (YOLOv8 + SAHI):</strong> Capable of identifying drones at extreme distances by slicing high-resolution frames.</li>
+                    <li><strong>Persistent Tracking & Target Locking:</strong> Combining Kalman Filters and CSRT Hard Lock tracking to ensure the system never loses the target.</li>
+                    <li><strong>Kinematic Logic Engine:</strong> An advanced logic engine that tracks speed, trajectory, and size to discriminate between birds, commercial drones, and fast missiles.</li>
+                    <li><strong>Auto-Thermal Night Vision:</strong> Automatically applies a thermal/CLAHE enhancement filter for night tracking.</li>
+                    <li><strong>Multi-Sensor Fusion:</strong> A localized visual-radar system using Optical Flow to detect fast-moving anomalous pixels in the sky.</li>
+                    <li><strong>Automated Countermeasure Engine:</strong> AI that automatically decides the best defense strategy (Jamming vs. Kinetic Attack).</li>
+                    <li><strong>Tactical C2 Dashboard:</strong> A military-grade Web UI displaying real-time video, telemetry data, and system logs.</li>
+                </ol>
+            </div>
+
+            <h2 class="section-title">4. System Integration & Real-World Application</h2>
+            <div class="text-body">
+                MCDIS is not just a simulation; it is designed as a central Middleware capable of seamless integration with existing military and surveillance hardware.
+            </div>
+            
+            <h3>System Integration</h3>
+            <div class="text-body" style="margin-top:0;">
+                <ul>
+                    <li><strong>Compatibility:</strong> MCDIS can ingest live RTSP video feeds from existing security infrastructure or legacy radars without requiring a complete overhaul.</li>
+                    <li><strong>Command & Control API:</strong> The system sends digital trigger signals via standard network protocols, automatically controlling electronic switches to activate jammers or sending precise XYZ coordinates to a missile launch mechanism.</li>
+                </ul>
+            </div>
+
+            <h3>Real-World Deployment</h3>
+            <div class="text-body" style="margin-top:0;">
+                Deploying MCDIS in a real-world scenario involves connecting our intelligent software backbone to the physical hardware layers:
+                <ul>
+                    <li><strong>Vision Hardware Layer:</strong> Connecting the system to High-Resolution Optical and Thermal cameras (e.g., FLIR) mounted on automated motorized Gimbals that move based on our tracking outputs.</li>
+                    <li><strong>Electronic Warfare Layer:</strong> Integrating with Software Defined Radios (SDRs like HackRF/USRP) paired with RF Power Amplifiers to emit targeted jamming frequencies calculated by our Countermeasure Engine.</li>
+                    <li><strong>Kinetic Attack Layer:</strong> Linking the system to automated interceptor drone launchers or CIWS (Close-In Weapon Systems). The launcher will aim based on the real-time telemetry (trajectory and speed) provided by the CSRT tracker.</li>
+                    <li><strong>Edge Computing:</strong> To achieve zero-latency AI video processing in the field, MCDIS will be hosted on ruggedized Edge Computing nodes (such as NVIDIA Jetson Orin) placed directly at the sensor sites.</li>
+                </ul>
+            </div>
+
+            <div class="section-title" style="background-color: #2ecc71; color: white; border: none; text-align: center; margin-top: 40px; border-radius: 5px;">
+                Conclusion
+            </div>
+            <div class="text-body" style="text-align: center; font-weight: bold; color: #27ae60;">
+                The MCDIS software architecture is a MISSION-READY, Plug-and-Play C2 (Command and Control) platform. It is fully prepared to sit atop any hardware ecosystem, transforming manual surveillance into a fully automated, intelligent air-defense system.
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# C extensions & build artifacts
+*.pyd
+*.dll
+*.obj
+*.lib
+*.exp
+
+# Virtual environments
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Large test videos and demo captures (> 50MB)
+*.mp4
+*.mov
+*.avi
+*.mkv
+!assets/demo/*.mp4
+
+# Temporary run artifacts & crops
+dashboard/static/crops/*.jpg
+static/crops/*.jpg
+mcdis_logs.db-wal
+mcdis_logs.db-shm
+crash_log.txt
+_agent_cmd.txt
+_agent_out.txt
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Caches
+.cache/
+.pytest_cache/

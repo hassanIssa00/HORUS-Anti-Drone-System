@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <title>MCDIS — Anti-Drone Competition Proposal | ITC Egypt 2026</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        @page { size: A4; margin: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background: #f0f0f0; color: #1a1a2e; line-height: 1.7; }
+
+        .page {
+            width: 210mm; min-height: 297mm; padding: 18mm 20mm;
+            margin: 8mm auto; background: #fff; position: relative;
+            page-break-after: always; box-shadow: 0 2px 16px rgba(0,0,0,.08);
+        }
+        .page::before {
+            content: ""; position: absolute; top: 12mm; left: 12mm; right: 12mm; bottom: 12mm;
+            border: 2.5px solid #0f3460; border-radius: 2px; pointer-events: none;
+        }
+        .content { position: relative; z-index: 1; }
+
+        /* Cover */
+        .cover { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; min-height: 255mm; }
+        .cover .badge { background: #0f3460; color: #fff; padding: 6px 28px; border-radius: 20px; font-size: 10pt; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 30px; }
+        .cover h1 { font-size: 34pt; font-weight: 900; color: #0f3460; margin-bottom: 8px; }
+        .cover h2 { font-size: 15pt; font-weight: 400; color: #555; margin-bottom: 40px; }
+        .cover .subtitle { font-size: 12pt; color: #888; max-width: 420px; line-height: 1.8; }
+        .cover .meta { margin-top: 60px; font-size: 11pt; color: #666; }
+        .cover .meta strong { color: #0f3460; }
+
+        /* Headings */
+        h2.section { font-size: 16pt; color: #0f3460; border-bottom: 3px solid #e94560; padding-bottom: 6px; margin: 28px 0 14px; }
+        h3.sub { font-size: 12pt; color: #16213e; margin: 16px 0 8px; font-weight: 700; }
+
+        /* Body */
+        .body { font-size: 11pt; text-align: justify; }
+        .body p { margin-bottom: 10px; }
+        .body ul, .body ol { padding-left: 22px; margin-bottom: 12px; }
+        .body li { margin-bottom: 6px; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 10pt; }
+        th { background: #0f3460; color: #fff; padding: 8px 10px; text-align: left; font-weight: 600; }
+        td { padding: 7px 10px; border-bottom: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background: #f8f9fa; }
+
+        /* Highlight boxes */
+        .highlight-box { background: #eef4ff; border-left: 4px solid #0f3460; padding: 12px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 10.5pt; }
+        .warn-box { background: #fff8e1; border-left: 4px solid #e94560; padding: 12px 16px; margin: 14px 0; border-radius: 0 6px 6px 0; font-size: 10.5pt; }
+
+        /* Tags */
+        .tag { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 8.5pt; font-weight: 700; margin-right: 4px; }
+        .tag-green { background: #d4edda; color: #155724; }
+        .tag-yellow { background: #fff3cd; color: #856404; }
+        .tag-blue { background: #cce5ff; color: #004085; }
+
+        /* Footer */
+        .page-footer { position: absolute; bottom: 14mm; left: 20mm; right: 20mm; text-align: center; font-size: 8pt; color: #aaa; }
+
+        /* Architecture diagram */
+        .arch-box { background: #0f3460; color: #fff; padding: 10px 14px; border-radius: 8px; text-align: center; font-size: 9.5pt; font-weight: 600; margin: 4px; display: inline-block; min-width: 130px; }
+        .arch-arrow { color: #e94560; font-size: 16pt; font-weight: 900; margin: 0 6px; }
+        .arch-row { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+        .arch-sub { background: #16213e; color: #ddd; padding: 6px 12px; border-radius: 6px; font-size: 8.5pt; margin: 3px; display: inline-block; }
+
+        @media print {
+            body { background: none; }
+            .page { margin: 0; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1: COVER ==================== -->
+<div class="page">
+    <div class="content cover">
+        <div class="badge">ITC Egypt 2026 — Anti-Drone Competition</div>
+        <h1>MCDIS</h1>
+        <h2>Multi-Modal Counter-Drone Intelligence System</h2>
+        <p class="subtitle">
+            An AI-driven software platform for real-time detection, classification,
+            tracking, and autonomous countermeasure deployment against hostile UAVs.
+        </p>
+        <div class="meta">
+            <p><strong>Submitted to:</strong> 6th International Telecommunications Conference</p>
+            <p><strong>Organized by:</strong> Air Defence College — Egyptian Military Academy</p>
+            <p style="margin-top:30px;"><strong>Team:</strong> MCDIS Engineering Team</p>
+            <p><strong>Date:</strong> April 2026</p>
+        </div>
+    </div>
+    <div class="page-footer">MCDIS — Competition Proposal — ITC Egypt 2026 | Page 1</div>
+</div>
+
+<!-- ==================== PAGE 2: ABSTRACT + PROBLEM ==================== -->
+<div class="page">
+    <div class="content body">
+        <h2 class="section">1. Executive Summary</h2>
+        <p>
+            <strong>MCDIS</strong> (Multi-Modal Counter-Drone Intelligence System) is a fully functional AI software backbone
+            designed to serve as the central intelligence layer of any Counter-Unmanned Aerial System (C-UAS) defense network.
+        </p>
+        <p>
+            Unlike hardware-only solutions, MCDIS focuses on the <strong>brain</strong> of the defense system — combining
+            deep learning computer vision (YOLOv8), multi-sensor fusion, kinematic threat analysis, and an automated
+            countermeasure decision engine into a single, deployable software platform.
+        </p>
+        <div class="highlight-box">
+            <strong>Key Innovation:</strong> MCDIS introduces a <em>Kinematic Discrimination Engine</em> that classifies
+            airborne targets as birds, commercial drones, or high-speed missiles based on real-time trajectory analysis,
+            speed profiling, and object geometry — dramatically reducing false positive rates compared to pure
+            visual-only detection systems.
+        </div>
+
+        <h2 class="section">2. Problem Statement</h2>
+        <p>
+            The proliferation of low-cost commercial UAVs has created an asymmetric threat landscape. Drones can be
+            weaponized for reconnaissance, payload delivery, and even kamikaze attacks using fiber-optic guidance
+            that defeats traditional electronic warfare.
+        </p>
+        <p><strong>Critical challenges addressed by MCDIS:</strong></p>
+        <ul>
+            <li><strong>Detection at range:</strong> Small drones (DJI Mini: 4cm² RCS) are nearly invisible to conventional radar</li>
+            <li><strong>Bird vs. Drone discrimination:</strong> Up to 40% of alerts in existing systems are false positives from birds</li>
+            <li><strong>Multi-threat response:</strong> Different drone types require different countermeasures (jamming vs. kinetic)</li>
+            <li><strong>24/7 operation:</strong> Night and low-visibility conditions degrade optical detection</li>
+            <li><strong>Fiber-optic drones:</strong> Modern attack drones bypass all RF jamming — requiring kinetic-only engagement</li>
+        </ul>
+
+        <h2 class="section">3. System Architecture</h2>
+        <p>MCDIS is structured around <strong>five operational pillars</strong> that form a complete detection-to-engagement pipeline:</p>
+
+        <div style="text-align:center; margin: 16px 0;">
+            <div class="arch-row">
+                <div class="arch-box">1. Multi-Spectral<br>Vision Engine</div>
+                <span class="arch-arrow">→</span>
+                <div class="arch-box">2. Sensor Fusion<br>& Tracking</div>
+                <span class="arch-arrow">→</span>
+                <div class="arch-box">3. Threat<br>Classification</div>
+                <span class="arch-arrow">→</span>
+                <div class="arch-box">4. Countermeasure<br>Decision Engine</div>
+                <span class="arch-arrow">→</span>
+                <div class="arch-box">5. C2 Tactical<br>Dashboard</div>
+            </div>
+        </div>
+
+        <p>Each pillar feeds data forward in real-time, creating an automated <strong>Detect → Track → Classify → Engage</strong> kill chain with sub-second latency.</p>
+    </div>
+    <div class="page-footer">MCDIS — Competition Proposal — ITC Egypt 2026 | Page 2</div>
+</div>
+
+<!-- ==================== PAGE 3: IMPLEMENTED TECH ==================== -->
+<div class="page">
+    <div class="content body">
+        <h2 class="section">4. Implemented Technologies</h2>
+        <p>The following components are <strong>fully implemented, tested, and executable</strong> in the current version:</p>
+
+        <h3 class="sub">4.1 AI Vision Detection Pipeline</h3>
+        <table>
+            <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
+            <tr><td>Object Detection</td><td>YOLOv8 (Ultralytics)</td><td>Real-time airborne object detection</td></tr>
+            <tr><td>Sliced Inference</td><td>SAHI Framework</td><td>Detect micro-drones at extreme range by tiling frames</td></tr>
+            <tr><td>GPU Acceleration</td><td>CUDA + FP16 + TF32</td><td>Real-time inference on NVIDIA GPUs</td></tr>
+            <tr><td>Night Vision</td><td>Auto-CLAHE Enhancement</td><td>Automatic thermal-style filter in low light</td></tr>
+        </table>
+        <p><span class="tag tag-green">✓ WORKING</span> Tested on multiple drone video feeds with confirmed detection and tracking.</p>
+
+        <h3 class="sub">4.2 Multi-Sensor Fusion & Persistent Tracking</h3>
+        <table>
+            <tr><th>Component</th><th>Technology</th><th>Purpose</th></tr>
+            <tr><td>State Estimation</td><td>Kalman Filter (8-state)</td><td>Predict target position when detector misses</td></tr>
+            <tr><td>Visual Lock</td><td>Template Matching (NCC)</td><td>Persistent pixel-level target lock-on</td></tr>
+            <tr><td>Re-Identification</td><td>MobileNetV3 (DeepReID)</td><td>Re-acquire targets after occlusion using visual signatures</td></tr>
+            <tr><td>Motion Radar</td><td>Optical Flow + MOG2</td><td>Detect any moving object in sky region as early warning</td></tr>
+        </table>
+        <p><span class="tag tag-green">✓ WORKING</span> Fusion engine maintains lock even when YOLO temporarily loses detection.</p>
+
+        <h3 class="sub">4.3 Kinematic Discrimination Engine (Innovation)</h3>
+        <div class="highlight-box">
+            This is the <strong>core innovation</strong> of MCDIS. Instead of relying solely on visual classification,
+            the system analyzes the <em>physical behavior</em> of each tracked object:
+        </div>
+        <table>
+            <tr><th>Metric</th><th>Bird</th><th>Commercial Drone</th><th>Missile / Kamikaze</th></tr>
+            <tr><td>Speed</td><td>&lt; 150 px/s</td><td>150–300 px/s</td><td>&gt; 300 px/s</td></tr>
+            <tr><td>Trajectory Straightness</td><td>&lt; 0.75</td><td>0.75–0.92</td><td>&gt; 0.92</td></tr>
+            <tr><td>Bounding Box Area</td><td>&lt; 1200 px²</td><td>Variable</td><td>Variable</td></tr>
+            <tr><td>Classification</td><td style="color:green">IGNORE</td><td style="color:orange">FLAG</td><td style="color:red;font-weight:700">CRITICAL</td></tr>
+        </table>
+
+        <h3 class="sub">4.4 Tactical Command & Control Dashboard</h3>
+        <p>A fully functional web-based C2 interface built with Flask + Socket.IO providing:</p>
+        <ul>
+            <li><strong>Dual video feed:</strong> Raw sensor + AI-annotated side-by-side comparison</li>
+            <li><strong>Live radar display:</strong> HTML5 Canvas with rotating sweep and target blips</li>
+            <li><strong>Target telemetry:</strong> Speed (km/h), heading (degrees), classification, threat level</li>
+            <li><strong>AI-enhanced target imagery:</strong> Zoomed, sharpened crop of locked target</li>
+            <li><strong>Auto-engage mode:</strong> AI autonomously selects and dispatches countermeasures</li>
+            <li><strong>Role-based access:</strong> Operator, Commander, and Observer login tiers</li>
+        </ul>
+        <p><span class="tag tag-green">✓ WORKING</span> Dashboard runs on localhost with real-time WebSocket updates.</p>
+    </div>
+    <div class="page-footer">MCDIS — Competition Proposal — ITC Egypt 2026 | Page 3</div>
+</div>
+
+<!-- ==================== PAGE 4: SIMULATED + COUNTERMEASURES ==================== -->
+<div class="page">
+    <div class="content body">
+        <h2 class="section">5. Countermeasure Architecture (Simulated)</h2>
+        <p>
+            MCDIS includes a comprehensive countermeasure decision engine. These modules are
+            <strong>architecturally complete</strong> with full logic, frequency databases, and API interfaces —
+            designed to be connected to physical hardware (SDR, missile systems) in operational deployment.
+        </p>
+
+        <h3 class="sub">5.1 Electronic Warfare & Jamming System</h3>
+        <table>
+            <tr><th>Level</th><th>Frequency</th><th>Target Protocol</th><th>Status</th></tr>
+            <tr><td>L1</td><td>433 MHz</td><td>LoRa, Legacy RC</td><td><span class="tag tag-yellow">Simulated</span></td></tr>
+            <tr><td>L2</td><td>900 MHz</td><td>ExpressLRS, ELRS</td><td><span class="tag tag-yellow">Simulated</span></td></tr>
+            <tr><td>L3</td><td>2.4 GHz</td><td>DJI OcuSync, WiFi, DSMX</td><td><span class="tag tag-yellow">Simulated</span></td></tr>
+            <tr><td>L4</td><td>5.8 GHz</td><td>FPV Video, DJI Digital</td><td><span class="tag tag-yellow">Simulated</span></td></tr>
+            <tr><td>L5</td><td>GPS L1/L2</td><td>Navigation Denial + Spoofing</td><td><span class="tag tag-yellow">Simulated</span></td></tr>
+        </table>
+        <p>The jamming system includes safety features: auto-stop timers (30s max burst), frequency exclusion zones (aviation VHF, marine, emergency beacons), and full audit logging.</p>
+
+        <h3 class="sub">5.2 Threat-Based Response Matrix</h3>
+        <table>
+            <tr><th>Drone Type</th><th>Priority</th><th>Recommended Action</th><th>Rationale</th></tr>
+            <tr><td>Shahed-136 (Kamikaze)</td><td style="color:red;font-weight:700">100</td><td>Kinetic Missile</td><td>GPS-denied, inertial nav — jamming ineffective</td></tr>
+            <tr><td>FPV Suicide (Fiber)</td><td style="color:red;font-weight:700">98</td><td>Kinetic Only</td><td>Fiber-optic guidance bypasses all RF jamming</td></tr>
+            <tr><td>Military Fixed-Wing</td><td style="color:orange">90</td><td>Missile + EW</td><td>Encrypted datalink, anti-spoof GPS</td></tr>
+            <tr><td>Swarm Units</td><td style="color:orange">80</td><td>Broadband Jam + HPM</td><td>Wide-spectrum denial for coordinated swarm</td></tr>
+            <tr><td>DJI Commercial</td><td>70</td><td>GPS Spoof → RTH Capture</td><td>Exploit Return-to-Home to land at capture zone</td></tr>
+            <tr><td>Bird</td><td style="color:green">0</td><td>None (Ignore)</td><td>Biological — false positive suppressed</td></tr>
+        </table>
+
+        <h3 class="sub">5.3 Radar System (Simulated)</h3>
+        <p>A physics-based radar simulation engine with real-world calibrated parameters:</p>
+        <ul>
+            <li><strong>Micro-Doppler classification:</strong> Distinguishes rotor harmonics from wing-flap signatures</li>
+            <li><strong>Three-ring threat zones:</strong> OUTER (5km) → MIDDLE (2km) → INNER (500m) with escalating alerts</li>
+            <li><strong>Track management:</strong> Nearest-neighbor association with automatic track initiation and pruning</li>
+            <li><strong>Real-world RCS database:</strong> Calibrated cross-sections for 12 drone types (0.001–5.0 m²)</li>
+        </ul>
+
+        <h2 class="section">6. 12-Class Military Threat Taxonomy</h2>
+        <p>MCDIS defines a comprehensive classification system covering all operationally relevant UAV types:</p>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0;">
+            <div class="arch-sub">① Shahed-136</div>
+            <div class="arch-sub">② FPV Suicide</div>
+            <div class="arch-sub">③ Military Fixed-Wing</div>
+            <div class="arch-sub">④ Wing Loong / CH-4</div>
+            <div class="arch-sub">⑤ Military Rotor</div>
+            <div class="arch-sub">⑥ DJI Large</div>
+            <div class="arch-sub">⑦ DJI Mini</div>
+            <div class="arch-sub">⑧ Generic Commercial</div>
+            <div class="arch-sub">⑨ Micro/Nano</div>
+            <div class="arch-sub">⑩ Swarm Unit</div>
+            <div class="arch-sub">⑪ Bird (FP suppression)</div>
+            <div class="arch-sub">⑫ Fixed Aircraft (IFF)</div>
+        </div>
+        <p>A complete dataset configuration (<code>dataset_config.yaml</code>) with training sources is prepared for custom model training as the next development phase.</p>
+    </div>
+    <div class="page-footer">MCDIS — Competition Proposal — ITC Egypt 2026 | Page 4</div>
+</div>
+
+<!-- ==================== PAGE 5: INNOVATION + FUTURE + CONCLUSION ==================== -->
+<div class="page">
+    <div class="content body">
+        <h2 class="section">7. What Makes MCDIS Different</h2>
+        <table>
+            <tr><th>Feature</th><th>Traditional C-UAS</th><th>MCDIS Approach</th></tr>
+            <tr><td>Detection</td><td>Single sensor (radar OR camera)</td><td>Multi-modal fusion (YOLO + Kalman + Template + Optical Flow + MOG2)</td></tr>
+            <tr><td>Classification</td><td>Visual only</td><td>Visual + Kinematic behavior analysis (speed, trajectory, geometry)</td></tr>
+            <tr><td>False Positives</td><td>High (birds trigger alerts)</td><td>Suppressed via kinematic discrimination + DeepReID</td></tr>
+            <tr><td>Night Operation</td><td>Requires separate thermal camera</td><td>Auto-CLAHE enhancement from standard camera</td></tr>
+            <tr><td>Response</td><td>Manual operator decision</td><td>AI-driven autonomous countermeasure selection</td></tr>
+            <tr><td>Architecture</td><td>Closed, vendor-locked</td><td>Open, modular — integrates with any hardware via RTSP/API</td></tr>
+        </table>
+
+        <h2 class="section">8. Technology Stack</h2>
+        <table>
+            <tr><th>Layer</th><th>Technologies</th></tr>
+            <tr><td>AI / Deep Learning</td><td>PyTorch, YOLOv8 (Ultralytics), SAHI, MobileNetV3, OpenCV</td></tr>
+            <tr><td>Tracking</td><td>Kalman Filter, Template Matching (NCC), ByteTrack</td></tr>
+            <tr><td>Backend</td><td>Python 3.10+, Flask, Socket.IO, SQLite3 (WAL mode)</td></tr>
+            <tr><td>Frontend</td><td>HTML5 Canvas, WebSocket, JavaScript</td></tr>
+            <tr><td>Hardware Acceleration</td><td>NVIDIA CUDA, cuDNN, FP16/TF32 inference</td></tr>
+            <tr><td>Deployment Target</td><td>x86 GPU workstation / NVIDIA Jetson (edge)</td></tr>
+        </table>
+
+        <h2 class="section">9. Development Roadmap</h2>
+        <table>
+            <tr><th>Phase</th><th>Description</th><th>Timeline</th></tr>
+            <tr><td style="color:green;font-weight:700">✓ Phase 1</td><td>AI Vision + Tracking + Dashboard — COMPLETE</td><td>Done</td></tr>
+            <tr><td style="color:green;font-weight:700">✓ Phase 2</td><td>Countermeasure Engine + Jamming Logic — COMPLETE (Simulated)</td><td>Done</td></tr>
+            <tr><td style="color:orange;font-weight:700">→ Phase 3</td><td>Custom 12-class drone model training on military dataset</td><td>Q3 2026</td></tr>
+            <tr><td>Phase 4</td><td>Hardware integration (SDR, PTZ camera, radar)</td><td>Q4 2026</td></tr>
+            <tr><td>Phase 5</td><td>Field trials and operational validation</td><td>2027</td></tr>
+        </table>
+
+        <h2 class="section">10. Conclusion</h2>
+        <div class="highlight-box" style="border-left-color: #27ae60; background: #eafaf1;">
+            MCDIS represents a <strong>complete AI-driven C-UAS software backbone</strong> — a deployable intelligence
+            layer that transforms raw sensor data into actionable threat intelligence and autonomous defense decisions.
+            <br><br>
+            The system's modular, open architecture means it can be integrated with any existing hardware infrastructure —
+            from a single PTZ camera to a distributed multi-node radar network — without requiring proprietary
+            vendor lock-in.
+            <br><br>
+            With its working detection pipeline, persistent tracking, kinematic discrimination, and tactical
+            dashboard already proven in testing, MCDIS is positioned as a <strong>practical, innovative, and
+            scalable</strong> solution to the growing drone threat.
+        </div>
+
+        <h2 class="section">11. References</h2>
+        <ol style="font-size: 9.5pt;">
+            <li>Ultralytics YOLOv8 — <em>https://github.com/ultralytics/ultralytics</em></li>
+            <li>SAHI: Slicing Aided Hyper Inference — Akyon et al., 2022, ICIP</li>
+            <li>UNROCKER: Acoustic Resonance Attack on Drone IMUs — NDSS 2023</li>
+            <li>DUT Anti-UAV Dataset — 10K+ images, 35+ drone types</li>
+            <li>Anti-UAV Challenge — RGB+IR tracking benchmark</li>
+            <li>ByteTrack: Multi-Object Tracking by Associating Every Detection Box — ECCV 2022</li>
+        </ol>
+    </div>
+    <div class="page-footer">MCDIS — Competition Proposal — ITC Egypt 2026 | Page 5</div>
+</div>
+
+</body>
+</html>

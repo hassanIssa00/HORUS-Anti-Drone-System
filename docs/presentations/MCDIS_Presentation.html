@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>MCDIS - عرض مشروع التخرج</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/night.min.css" id="theme">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        .reveal {
+            font-family: 'Cairo', sans-serif;
+        }
+        .reveal h1, .reveal h2, .reveal h3, .reveal h4, .reveal h5, .reveal h6 {
+            font-family: 'Cairo', sans-serif;
+            text-transform: none;
+            color: #00ffcc;
+        }
+        .reveal p, .reveal li {
+            font-size: 0.85em;
+            line-height: 1.6;
+            color: #e0e0e0;
+        }
+        .highlight {
+            color: #ff3366;
+            font-weight: bold;
+        }
+        .box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #00ffcc;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.2);
+        }
+        .status-ready {
+            display: inline-block;
+            background: rgba(0, 255, 0, 0.2);
+            color: #00ff00;
+            padding: 10px 20px;
+            border-radius: 5px;
+            border: 1px solid #00ff00;
+            font-weight: bold;
+            margin-top: 20px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(0, 255, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: right;
+        }
+        .feature-item {
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-right: 4px solid #00ffcc;
+        }
+        .feature-item h4 {
+            margin-top: 0;
+            font-size: 1.1em;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+            
+            <!-- Slide 1: Title -->
+            <section>
+                <img src="https://cdn-icons-png.flaticon.com/512/2061/2061906.png" alt="Drone Icon" style="width: 150px; filter: invert(80%) sepia(50%) saturate(1000%) hue-rotate(120deg);">
+                <h1 style="font-size: 2.5em;">نظام MCDIS</h1>
+                <h3>Multi-Modal Counter-Drone Intelligence System</h3>
+                <p>نظام الذكاء متعدد الوسائط لمكافحة الطائرات بدون طيار</p>
+                <br>
+                <p style="color: #888;">عرض ومناقشة المشروع</p>
+            </section>
+
+            <!-- Slide 2: Intro -->
+            <section>
+                <h2>ما هي أنظمة الـ Anti-Drone؟</h2>
+                <div class="box">
+                    <p>مع التطور السريع للدرونز واستخداماتها، ظهرت الحاجة لأنظمة متخصصة لحماية المجال الجوي.</p>
+                    <p>أنظمة مكافحة الطائرات بدون طيار مصممة لـ <span class="highlight">الاكتشاف، والتتبع، والتصنيف، والتحييد</span> للتهديدات الجوية.</p>
+                </div>
+                <p>النظام الفعال يجب أن يعتمد على استراتيجية <strong>متعددة الطبقات</strong> للتعامل مع السيناريوهات المختلفة.</p>
+            </section>
+
+            <!-- Slide 3: The 3 Systems Overview -->
+            <section>
+                <h2>الأنظمة الأساسية لمواجهة التهديدات</h2>
+                <p>لقد قسمنا استراتيجية الدفاع إلى 3 أنظمة رئيسية:</p>
+                <ul>
+                    <li><strong style="color:#ff3366;">النظام الأول:</strong> نظام الهجوم والاعتراض (Attack System)</li>
+                    <li><strong style="color:#ffff00;">النظام الثاني:</strong> نظام التشويش والحرب الإلكترونية (Jamming System)</li>
+                    <li><strong style="color:#00ccff;">النظام الثالث:</strong> نظام الرادار والإنذار المبكر (Radar System)</li>
+                </ul>
+            </section>
+
+            <!-- Slide 4: Attack System -->
+            <section>
+                <h2>1. نظام الهجوم والاعتراض (Attack System)</h2>
+                <p style="text-align: right;">يعتمد بشكل كامل على <span class="highlight">الرؤية البصرية (Visual Detector)</span> الذي قمنا بتطويره.</p>
+                <ul style="text-align: right; direction: rtl;">
+                    <li><strong>التتبع والإقفال (Lock Down):</strong> النظام يكتشف الدرون، يحدده، ويفضل متتبعه بدون فقدان (Targeting).</li>
+                    <li><strong>أوامر الاعتراض:</strong> يعطي الأمر للتحييد الحركي:
+                        <ul>
+                            <li>إطلاق صاروخ لضرب الدرون.</li>
+                            <li>إطلاق درون أخرى لرمي شبكة عليها.</li>
+                            <li>درون انتحارية تصطدم بها وتسقطها.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Slide 5: Jamming System -->
+            <section>
+                <h2>2. نظام التشويش (Jamming System)</h2>
+                <p style="text-align: right;">يتم التشويش على عدة مستويات (Levels):</p>
+                <ul style="font-size: 0.75em; text-align: right; direction: rtl;">
+                    <li><strong>Level 1:</strong> تشويش على الاتصالات المشفرة اللاسلكية (للطائرات العسكرية).</li>
+                    <li><strong>Level 2:</strong> تشويش 2.4GHz / 900MHz (لاتصال التحكم التجاري).</li>
+                    <li><strong>Level 3:</strong> تشويش 5.8GHz / 1.xGHz (لنقل الفيديو Video Transmission).</li>
+                    <li><strong>Level 4 (الملاحة GPS):</strong>
+                        <ul>
+                            <li><span style="color:#00ffcc;">الدرونز الذكية:</span> نقوم بعمل Overwrite ونسحبها ونسيطر عليها.</li>
+                            <li><span style="color:#ffcc00;">درون FPV بدون GPS:</span> لا يمكن سحبها، فنشوش على إشارة التحكم لتسقط.</li>
+                            <li><span style="color:#ff3366;">الدرونز السلكية (Fiber-Optic):</span> الطائرات الانتحارية الحديثة المربوطة بأسلاك لمنع التشويش -> <br><strong>الحل الوحيد لها هو إسقاطها بصاروخ عبر نظام الهجوم (Attack System).</strong></li>
+                        </ul>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- Slide 6: Radar System -->
+            <section>
+                <h2>3. نظام الرادار والإنذار المبكر</h2>
+                <div class="box">
+                    <p style="text-align: right;">الرادار هو خط الدفاع الأول (Early Warning).</p>
+                    <ul style="text-align: right; direction: rtl;">
+                        <li>يقوم باكتشاف التهديدات من مسافات بعيدة جداً.</li>
+                        <li>بمجرد دخول التهديد، يعطي تنبيهاً مباشراً وإحداثيات مبدئية.</li>
+                        <li>يقوم بتوجيه <span class="highlight">نظام الهجوم (الكاميرات)</span> أو <span class="highlight">نظام التشويش</span> للبدء في التعامل الفوري والـ Tracking الدقيق.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Slide 7: What did we do? -->
+            <section>
+                <h2>ماذا أنجزنا في مشروعنا؟ (MCDIS)</h2>
+                <p>لقد قمنا ببرمجة العقل المدبر والبرمجيات المتكاملة لهذه المنظومة:</p>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>1. نظام الرؤية (YOLOv8 + SAHI)</h4>
+                        <p>رصد دقيق من مسافات بعيدة عبر تقسيم الصور.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>2. التتبع والإقفال (TrackerMIL/CSRT)</h4>
+                        <p>بمجرد رصد الهدف يتم عمل Lock Down ولن يفقده.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>3. المحلل الحركي (Kinematic Logic)</h4>
+                        <p>يفرق بين الطيور، الدرونز، والصواريخ السريعة عبر مسارها وحجمها.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>4. الرؤية الليلية الحرارية التلقائية</h4>
+                        <p>تعزيز الرؤية تلقائياً في الإضاءة المنخفضة.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 8: Continued... -->
+            <section>
+                <h2>ماذا أنجزنا أيضاً؟</h2>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>5. الرادار البصري (Optical Flow / MOG2)</h4>
+                        <p>رصد حركة غير طبيعية في السماء كإنذار مبكر.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>6. محرك التدابير (Countermeasure Engine)</h4>
+                        <p>ذكاء اصطناعي يقرر تلقائياً الرد الأنسب (تشويش أم صاروخ).</p>
+                    </div>
+                    <div class="feature-item" style="grid-column: span 2;">
+                        <h4>7. واجهة القيادة التكتيكية (Dashboard)</h4>
+                        <p>واجهة متكاملة تعرض الفيديو، الرادار، وبيانات التهديد (السرعة والاتجاه) مباشرة.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 9: System Integration -->
+            <section>
+                <h2>تكامل النظام (System Integration)</h2>
+                <p>كيف يتكامل MCDIS كـ (عقل مدبر) مع الأنظمة الحالية؟</p>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4 style="color: #ffcc00;">التوافقية العالية (Compatibility)</h4>
+                        <p>استقبال البث المباشر (RTSP) من الكاميرات والرادارات الموجودة مسبقاً دون الحاجة لتغيير البنية التحتية.</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4 style="color: #00ccff;">أوامر التشغيل الآلي (APIs & Triggers)</h4>
+                        <p>إرسال أوامر وإحداثيات رقمية مباشرة للتحكم في أجهزة التشويش أو منصات الإطلاق أوتوماتيكياً عبر الشبكة.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 10: Real-World Deployment -->
+            <section>
+                <h2>التطبيق في أرض الواقع (Real-World Deployment)</h2>
+                <div class="box">
+                    <ul style="text-align: right; direction: rtl; font-size: 0.8em;">
+                        <li><strong>المراقبة (Vision):</strong> ربط النظام بكاميرات حرارية/بصرية عالية الدقة (PTZ/FLIR) على قاعدة متحركة يوجهها النظام آلياً.</li>
+                        <li><strong>التشويش (EW):</strong> توصيل النظام بأجهزة (SDRs) ومكبرات طاقة (RF Amplifiers) لشن هجوم إلكتروني بالترددات المناسبة.</li>
+                        <li><strong>الهجوم (Attack):</strong> ربط إحداثيات (الـ Tracker) في نظامنا مع منصات الصواريخ أو الطائرات الانتحارية لتوجيه ضربة دقيقة.</li>
+                        <li><strong>الحوسبة الميدانية (Edge Computing):</strong> تشغيل النظام على وحدات مدمجة (NVIDIA Jetson) في موقع الحدث لضمان استجابة فورية (Zero-Latency).</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Slide 11: System Status -->
+            <section>
+                <h2>هل النظام الخاص بنا متكامل؟</h2>
+                <p>نعم، من الناحية البرمجية والخوارزمية.</p>
+                <div class="box">
+                    <p style="text-align: justify; direction: rtl;">
+                        برمجيات نظام <strong>MCDIS</strong> تعمل كـ "عقل مدبر" متكامل ومستعدة حالياً للاختبار في بيئات محاكاة واقعية. النظام قادر على استلام بيانات الكاميرات، تحليلها، تتبعها، واتخاذ قرار الدفاع المناسب في أجزاء من الثانية.
+                    </p>
+                    <p style="text-align: justify; direction: rtl;">
+                        <strong>الخطوة القادمة (الدمج الفعلي):</strong> النظام جاهز برمجياً للربط المباشر مع الهاردوير الحقيقي (كاميرات حرارية حقيقية، رادارات، أنظمة إطلاق أو أجهزة تشويش SDR).
+                    </p>
+                </div>
+                <div class="status-ready">
+                    حالة النظام: متكامل وجاهز (MISSION READY)
+                </div>
+            </section>
+
+            <!-- Slide 10: Ending -->
+            <section>
+                <h1 style="color: #00ffcc;">شكراً لكم</h1>
+                <h3>MCDIS Project 2026</h3>
+                <p>Multi-Modal Counter-Drone Intelligence System</p>
+            </section>
+
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            rtl: true, // Enable Right-to-Left for Arabic
+            transition: 'slide',
+            backgroundTransition: 'zoom'
+        });
+    </script>
+</body>
+</html>

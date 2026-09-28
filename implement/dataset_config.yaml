@@ -1,0 +1,348 @@
+# ╔══════════════════════════════════════════════════════════════════════╗
+# ║  MCDIS — Multi-Modal Counter-Drone Intelligence System              ║
+# ║  Module: Military Drone Dataset Configuration                        ║
+# ║  Version: 3.0  |  Classes: 12  |  Threat-Aware Taxonomy             ║
+# ╚══════════════════════════════════════════════════════════════════════╝
+#
+# CLASS PHILOSOPHY:
+#   Priority 1 (CRITICAL)  — Kamikaze/Suicide/Loitering Munitions
+#   Priority 2 (HIGH)      — Military Fixed-Wing & Heavy UAS
+#   Priority 3 (HIGH)      — Military Rotary & Multi-Rotor Tactical
+#   Priority 4 (ELEVATED)  — Commercial / Dual-Use Platforms
+#   Priority 5 (MONITOR)   — Micro / Nano drones
+#   Priority 6 (LOW/FP)    — False Positive classes (birds, aircraft)
+# ─────────────────────────────────────────────────────────────────────
+
+# ── YOLOv8 Dataset Structure ──────────────────────────────────────────
+path: ./datasets/mcdis_unified      # Root dataset directory
+train: images/train
+val:   images/val
+test:  images/test
+
+# ── Class Definitions (nc = 12) ───────────────────────────────────────
+nc: 12
+
+names:
+  # ── PRIORITY 1: KAMIKAZE / LOITERING MUNITIONS (CRITICAL THREAT) ──
+  0: shahed_136        # Shahed-136 / Geranium-2 — Iranian loitering munition
+                       # Wingspan ~2.5m, delta-wing, low-altitude, ~36kg warhead
+                       # Visual cues: delta wing, prop in rear, no landing gear
+                       # Threat: CRITICAL | Destroy on detection
+
+  1: fpv_suicide       # FPV Kamikaze Drone — commercial FPV modified as munition
+                       # Typically carries 40mm-120mm grenade or shaped charge
+                       # Visual cues: small (<0.5m), fast, no GPS module visible
+                       # Often fiber-optic guided — NOT jammable, kinetic only
+                       # Threat: CRITICAL | No jamming — missile/projectile only
+
+  # ── PRIORITY 2: MILITARY FIXED-WING UAS ──────────────────────────
+  2: military_fixed_wing  # Large military fixed-wing UAV (Bayraktar TB2, MQ-9, Heron)
+                           # Wingspan >3m, turboprop or jet engine
+                           # Visual cues: long wings, underwing pylons, sensor ball
+                           # Threat: HIGH | Long-range jamming + missile
+
+  3: wing_loong           # Wing Loong / CH-4 / MALE class Chinese/export UAVs
+                           # Similar to Predator profile, used by multiple states
+                           # Visual cues: inverted-V tail, long fuselage, pusher prop
+                           # Threat: HIGH | Military-grade ECM + kinetic
+
+  # ── PRIORITY 3: MILITARY ROTARY / TACTICAL UAS ───────────────────
+  4: military_rotor       # Military multi-rotor tactical drone (T-72 style, Elbit)
+                           # Heavy quadcopter/hexacopter with armor/payload
+                           # Visual cues: rigid arms, military paint, no camera housing
+                           # Threat: HIGH | Jamming L1 + intercept drone
+
+  # ── PRIORITY 4: COMMERCIAL / DUAL-USE (ELEVATED THREAT) ──────────
+  5: dji_large            # DJI Phantom 4 / Mavic 3 / Inspire 2 / Matrice series
+                           # Most common weaponizable platform (grenade drop kit)
+                           # Visual cues: white/grey body, camera gimbal, folding arms
+                           # Operates on OcuSync 2.4/5.8GHz — fully jammable
+                           # Threat: ELEVATED | 2.4/5.8GHz jam + GPS override
+
+  6: dji_mini             # DJI Mini 2/3/4 — sub-250g micro commercial drone
+                           # Harder to detect, battery-limited (~30min)
+                           # Visual cues: grey foldable, very small camera
+                           # Operates on OcuSync 2.4GHz
+                           # Threat: ELEVATED | Jam 2.4GHz + visual tracking
+
+  7: generic_commercial   # Generic commercial quadcopter (non-DJI: Autel, Parrot,
+                           # Skydio, Hubsan, etc.) or unidentified commercial build
+                           # Visual cues: typical quadcopter form, LED indicators
+                           # Threat: ELEVATED | Protocol scan → jam
+
+  # ── PRIORITY 5: MICRO / NANO / SWARM ─────────────────────────────
+  8: micro_nano           # Micro (<100g) / Nano (<10g) UAS, Black Hornet type
+                           # Extremely hard to detect visually, short range
+                           # Swarm deployable — radar + acoustic detection primary
+                           # Threat: MONITOR | Acoustic + radar prioritized
+
+  9: swarm_unit           # Swarm drone — single unit in coordinated swarm formation
+                           # Any size but operates in formation with others
+                           # Visual cues: formation flying, synchronized movement
+                           # Threat: HIGH (swarm) | Broadband jamming + area denial
+
+  # ── PRIORITY 6: FALSE POSITIVES / LOW THREAT ─────────────────────
+  10: bird                # Bird — primary false positive class
+                           # Seagulls, eagles, herons at distance resemble drones
+                           # Motion cue: wing flap, erratic path (vs drone steady)
+                           # Threat: NONE | Log only, no countermeasure
+
+  11: fixed_aircraft      # Fixed-wing aircraft / helicopter / balloon / kite
+                           # Commercial aviation, hot-air balloon, military jet (friendly)
+                           # IFF tag cross-reference required before any action
+                           # Threat: NONE | Monitor + IFF check mandatory
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  THREAT PRIORITY MATRIX
+# ══════════════════════════════════════════════════════════════════════
+threat_matrix:
+  shahed_136:
+    priority: 100          # Maximum — loitering munition inbound
+    response_time_sec: 2   # Engage within 2 seconds of confirmation
+    countermeasures: [missile, interceptor_drone, kinetic_projectile]
+    jamming: false          # Delta-wing + inertial nav — jamming ineffective
+    radar_signature: low   # Low RCS — radar priority detection
+
+  fpv_suicide:
+    priority: 98
+    response_time_sec: 1
+    countermeasures: [missile, shotgun_net, kinetic_projectile]
+    jamming: false          # Fiber-optic FPV — RC jamming INEFFECTIVE
+    radar_signature: very_low
+
+  military_fixed_wing:
+    priority: 90
+    response_time_sec: 30
+    countermeasures: [missile, long_range_ew, interceptor_drone]
+    jamming: true
+    jam_bands: [gps_l1, gps_l2, datalink_kuhz]
+
+  wing_loong:
+    priority: 88
+    response_time_sec: 30
+    countermeasures: [missile, long_range_ew]
+    jamming: true
+    jam_bands: [gps_l1, gps_l2, satcom]
+
+  military_rotor:
+    priority: 85
+    response_time_sec: 15
+    countermeasures: [missile, interceptor_drone, net_projectile]
+    jamming: true
+    jam_bands: [gps_l1, freq_2400, freq_5800]
+
+  swarm_unit:
+    priority: 80
+    response_time_sec: 5
+    countermeasures: [broadband_jamming, area_denial, hpem_pulse]
+    jamming: true
+    jam_bands: [freq_2400, freq_5800, freq_900, freq_433]
+
+  dji_large:
+    priority: 70
+    response_time_sec: 10
+    countermeasures: [jam_2400, jam_5800, gps_override, interceptor_drone]
+    jamming: true
+    jam_bands: [freq_2400, freq_5800, gps_l1]
+    gps_override: true      # DJI Return-to-Home spoofable
+
+  dji_mini:
+    priority: 60
+    response_time_sec: 15
+    countermeasures: [jam_2400, gps_override]
+    jamming: true
+    jam_bands: [freq_2400, gps_l1]
+    gps_override: true
+
+  generic_commercial:
+    priority: 55
+    response_time_sec: 15
+    countermeasures: [jam_2400, jam_5800, jam_900, interceptor_drone]
+    jamming: true
+    jam_bands: [freq_2400, freq_5800, freq_900]
+
+  micro_nano:
+    priority: 40
+    response_time_sec: 30
+    countermeasures: [acoustic_tracking, net_projectile]
+    jamming: conditional   # Only if RF control confirmed
+
+  bird:
+    priority: 0
+    response_time_sec: 999
+    countermeasures: []
+    jamming: false
+    note: "FALSE POSITIVE — No action. Log only."
+
+  fixed_aircraft:
+    priority: 0
+    response_time_sec: 999
+    countermeasures: []
+    jamming: false
+    note: "IFF check before any action. FRIENDLY until confirmed hostile."
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  DATASET SOURCES REGISTRY
+# ══════════════════════════════════════════════════════════════════════
+datasets:
+  - name: DUT_Anti-UAV
+    url: https://github.com/wangdongdut/DUTAnti-UAV
+    size: "~10,000 images"
+    drone_types: 35+
+    format: YOLO
+    split: [train, val, test]
+    notes: >
+      Primary benchmark dataset. Includes small UAVs in various backgrounds
+      and lighting conditions. IR + RGB variants available.
+
+  - name: Anti-UAV_Challenge
+    url: https://anti-uav.github.io/
+    size: "~20,000 frames"
+    drone_types: 5
+    format: VOC/COCO
+    split: [train, val]
+    notes: >
+      Official Anti-UAV Challenge dataset with RGB and IR thermal pairs.
+      Focus on DJI Phantom, Inspire, and custom builds.
+
+  - name: Roboflow_Drone_Detect
+    url: https://universe.roboflow.com/roboflow-100/aerial-drone-detection
+    size: "~4,000 images"
+    drone_types: 8
+    format: YOLO
+    split: [train, val, test]
+    notes: >
+      Diverse backgrounds including urban, desert, forest.
+      Good representation of small commercial drones.
+
+  - name: VisDrone2019
+    url: https://github.com/VisDrone/VisDrone-Dataset
+    size: "~10,000 images"
+    drone_types: 10
+    format: COCO
+    split: [train, val, test]
+    notes: >
+      Multi-class aerial surveillance dataset. Useful for person/vehicle
+      detection from drone perspective AND detecting drones in sky.
+
+  - name: DOGFIGHT
+    url: https://github.com/dogfight-dataset/dogfight
+    size: "~2,000 images"
+    drone_types: Military UAV variants
+    format: YOLO
+    split: [train, val]
+    notes: >
+      Military-focused dataset with Bayraktar TB2, UCAV, and tactical UAS.
+      Key source for military_fixed_wing and wing_loong classes.
+
+  - name: Shahed136_Custom
+    url: custom_scraped
+    size: "~500 images"
+    drone_types: [shahed_136, fpv_suicide]
+    format: YOLO
+    notes: >
+      Custom scraped/annotated dataset from open-source conflict imagery.
+      Shahed-136 from Ukraine conflict press photos (annotated manually).
+
+  - name: OpenImages_Birds
+    url: https://storage.googleapis.com/openimages/web/index.html
+    size: "~5,000 images"
+    drone_types: [bird]
+    format: COCO
+    notes: >
+      Bird images for false positive suppression training.
+      Critical for reducing false alarms in deployment.
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  AUGMENTATION PIPELINE CONFIGURATION
+# ══════════════════════════════════════════════════════════════════════
+augmentation:
+  enabled: true
+
+  # Military-grade environmental augmentation
+  fog:
+    enabled: true
+    probability: 0.25
+    fog_coef_lower: 0.1
+    fog_coef_upper: 0.5
+    alpha_coef: 0.08
+
+  rain:
+    enabled: true
+    probability: 0.20
+    slant_lower: -10
+    slant_upper: 10
+    drop_length: 15
+    drop_width: 1
+    blur_value: 3
+    brightness_coefficient: 0.7
+
+  night_simulation:
+    enabled: true
+    probability: 0.30
+    brightness_lower: 0.1
+    brightness_upper: 0.35
+    noise_std: 15
+
+  motion_blur:
+    enabled: true
+    probability: 0.35
+    blur_limit: [5, 15]
+    direction: random    # Simulates fast-moving target or camera movement
+
+  sensor_noise:
+    enabled: true
+    probability: 0.40
+    noise_types: [gaussian, salt_pepper, speckle]
+    var_limit: [10, 80]
+
+  thermal_simulation:
+    enabled: true
+    probability: 0.15
+    colormap: COLORMAP_INFERNO
+    notes: "Simulates IR sensor for night ops"
+
+  geometric:
+    horizontal_flip: { probability: 0.5 }
+    vertical_flip:   { probability: 0.05 }
+    rotation:        { probability: 0.3, limit: 15 }
+    perspective:     { probability: 0.2, scale: [0.05, 0.15] }
+
+  photometric:
+    hsv_hue:        { probability: 0.3, hgain: 0.015 }
+    hsv_saturation: { probability: 0.3, sgain: 0.7 }
+    hsv_value:      { probability: 0.3, vgain: 0.4 }
+    clahe:          { probability: 0.2, clip_limit: [1, 4] }
+
+
+# ══════════════════════════════════════════════════════════════════════
+#  TRAINING HYPERPARAMETERS (YOLOv8)
+# ══════════════════════════════════════════════════════════════════════
+training:
+  model: yolov8m.pt         # Medium model — balance of speed & accuracy
+  epochs: 150
+  imgsz: 1280               # High-res for micro-target detection
+  batch: 8                  # Adjust per GPU VRAM
+  patience: 30              # Early stopping
+  optimizer: AdamW
+  lr0: 0.001
+  lrf: 0.01
+  momentum: 0.937
+  weight_decay: 0.0005
+  warmup_epochs: 5
+  cos_lr: true
+  mosaic: 1.0
+  mixup: 0.3
+  copy_paste: 0.2
+  conf_thres: 0.25
+  iou_thres: 0.45
+  device: 0                 # GPU index (set 'cpu' if no GPU)
+  workers: 4
+  project: runs/mcdis_drone
+  name: v3_military
+  exist_ok: true
+  pretrained: true
+  amp: true                 # Mixed precision training

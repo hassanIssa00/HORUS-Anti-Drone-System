@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>تقرير مشروع التخرج - MCDIS</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #000;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            margin: 10mm auto;
+            background: white;
+            box-sizing: border-box;
+            position: relative;
+            page-break-after: auto;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        /* الإطار (Border) */
+        .page::before {
+            content: "";
+            position: absolute;
+            top: 15mm;
+            left: 15mm;
+            right: 15mm;
+            bottom: 15mm;
+            border: 4px double #1a252f;
+            pointer-events: none;
+        }
+
+        .content {
+            position: relative;
+            z-index: 1;
+            height: 100%;
+        }
+
+        h1, h2, h3 {
+            color: #1a252f;
+        }
+
+        .cover-page {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 250mm;
+        }
+
+        .cover-page h1 {
+            font-size: 36pt;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .cover-page h2 {
+            font-size: 24pt;
+            color: #7f8c8d;
+            margin-bottom: 50px;
+        }
+
+        .cover-page h3 {
+            font-size: 18pt;
+            margin-top: 100px;
+        }
+
+        .section-title {
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-right: 5px solid #2980b9;
+            margin-top: 30px;
+            font-size: 20pt;
+            page-break-after: avoid;
+        }
+
+        .text-body {
+            font-size: 14pt;
+            line-height: 1.8;
+            text-align: justify;
+            margin-top: 20px;
+        }
+
+        ul, ol {
+            font-size: 14pt;
+            line-height: 1.8;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        .highlight {
+            font-weight: bold;
+            color: #c0392b;
+        }
+
+        @media print {
+            body { background: none; }
+            .page {
+                margin: 0;
+                box-shadow: none;
+                border: initial;
+                border-radius: initial;
+                width: initial;
+                min-height: initial;
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Cover Page -->
+    <div class="page">
+        <div class="content cover-page">
+            <h1 style="color: #2c3e50; font-weight: 800;">تقرير المشروع التقني</h1>
+            <h2>نظام الذكاء متعدد الوسائط لمكافحة الطائرات بدون طيار</h2>
+            <div style="font-size: 20pt; font-weight: bold; color: #2980b9; margin-top: 20px;">(MCDIS)</div>
+            <div style="font-size: 16pt; margin-top: 10px;">Multi-Modal Counter-Drone Intelligence System</div>
+            
+            <h3 style="margin-top: 150px;">إعداد</h3>
+            <p style="font-size: 18pt; font-weight: bold;">فريق تطوير مشروع MCDIS</p>
+            <p style="font-size: 14pt; margin-top: 50px;">2026</p>
+        </div>
+    </div>
+
+    <!-- Page 2 -->
+    <div class="page">
+        <div class="content">
+            <h2 class="section-title">1. مقدمة عن أنظمة مكافحة الطائرات بدون طيار</h2>
+            <div class="text-body">
+                مع الانتشار السريع للطائرات بدون طيار (UAVs) في الاستخدامات التجارية والعسكرية، تزايدت التهديدات الناتجة عنها بشكل غير مسبوق، سواء في التجسس، الهجمات، أو التهريب. تم تصميم أنظمة الـ (Anti-Drone) لاكتشاف، وتتبع، وتحديد، وتحييد هذه التهديدات. وتعتمد الأنظمة الحديثة على نهج متعدد الطبقات (Multi-Layered Approach) يدمج أجهزة استشعار مختلفة وأساليب دفاعية لضمان أمن المجال الجوي بشكل كامل.
+            </div>
+
+            <h2 class="section-title">2. الأنظمة الرئيسية المستخدمة لمواجهة التهديدات</h2>
+            <div class="text-body">
+                لحماية أي منشأة بالكامل، تنقسم استراتيجية مكافحة الطائرات بدون طيار إلى ثلاثة أنظمة أساسية متكاملة:
+            </div>
+
+            <h3>أولاً: نظام الهجوم والاعتراض (Attack System)</h3>
+            <div class="text-body" style="margin-top:0;">
+                يعتمد هذا النظام على التحييد الحركي أو المادي (Kinetic Hard-Kill) للدرون، ويستخدم بشكل أساسي <span class="highlight">نظام الرؤية البصرية الذكي (Visual Detector)</span>.
+                <ul>
+                    <li><strong>التتبع وتأكيد الهدف:</strong> يقوم النظام باكتشاف الدرون، وعمل "Lock" ثابت عليه، والاستمرار في تتبعه بدقة.</li>
+                    <li><strong>آلية الاعتراض:</strong> بعد تحديد الهدف، يعطي النظام أمراً بالهجوم (إطلاق صاروخ موجه، أو إطلاق درون محملة بشبكة للقبض عليه، أو طائرة انتحارية للاصطدام به).</li>
+                </ul>
+            </div>
+
+            <h3>ثانياً: نظام التشويش والحرب الإلكترونية (Jamming System)</h3>
+            <div class="text-body" style="margin-top:0;">
+                يقوم هذا النظام بالتحييد غير المادي عن طريق تعطيل اتصالات الدرون ونظام الملاحة على عدة مستويات:
+                <ul>
+                    <li><strong>المستوى الأول:</strong> التشويش على الاتصالات اللاسلكية المشفرة.</li>
+                    <li><strong>المستوى الثاني:</strong> التشويش على ترددات 2.4GHz و 900MHz (التحكم RC).</li>
+                    <li><strong>المستوى الثالث:</strong> التشويش على ترددات 5.8GHz أو 1.xGHz (نقل الفيديو).</li>
+                    <li><strong>المستوى الرابع (الملاحة GPS):</strong>
+                        <ul>
+                            <li><strong>الدرون الذكية:</strong> يتم عمل (Overwrite) لإحداثيات الـ GPS، وسحب الدرون للهبوط في منطقة آمنة.</li>
+                            <li><strong>درون הـ FPV/الانتحارية:</strong> نظراً لعدم احتوائها غالباً على GPS، نشوش على إشارة التحكم لتسقط فوراً.</li>
+                            <li><span class="highlight">الدرونز السلكية (Fiber-Optic):</span> أحدث أنواع التهديدات، طائرات انتحارية متصلة بأسلاك فايبر لتجنب التشويش اللاسلكي. الحل الوحيد لتدميرها هو <strong>نظام الهجوم (الصاروخ)</strong>.</li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <h3>ثالثاً: نظام الرادار والإنذار المبكر (Radar System)</h3>
+            <div class="text-body" style="margin-top:0;">
+                يمثل خط الدفاع الأول والإنذار المبكر، حيث يوفر رصداً بعيد المدى ويوجه نظام الكاميرات (لعمل Lock بصري) ونظام التشويش نحو المنطقة المستهدفة فورياً.
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3 -->
+    <div class="page">
+        <div class="content">
+            <h2 class="section-title">3. ما تم إنجازه في مشروعنا (نظام MCDIS)</h2>
+            <div class="text-body">
+                نجحنا في بناء نظام برمجي متكامل (MCDIS) يعمل كـ "العقل المدبر" (Command & Control) لهذه المنظومات:
+                <ol>
+                    <li><strong>نظام الرؤية (AI Vision Pipeline):</strong> اكتشاف مرئي باستخدام YOLOv8 وتقنية SAHI لرصد الطائرات الصغيرة جداً من مسافات بعيدة.</li>
+                    <li><strong>إقفال الهدف (Hard Lock):</strong> دمج خوارزميات Kalman Filters مع CSRT Tracker لضمان عدم فقدان الهدف بمجرد رصده.</li>
+                    <li><strong>نظام التحليل الحركي:</strong> محرك ذكي للتمييز بين الطيور (تجاهل)، الدرون (إنذار)، والصواريخ السريعة (تهديد حرج CRITICAL).</li>
+                    <li><strong>الرؤية الليلية التلقائية:</strong> تفعيل تلقائي لفلاتر حرارية للرصد في الظلام.</li>
+                    <li><strong>الرادار البصري المدمج:</strong> نظام إنذار مبكر يعتمد على تحليل حركة البيكسلات (Optical Flow) لاكتشاف الشذوذ الحركي في السماء.</li>
+                    <li><strong>محرك التدابير (Countermeasure Engine):</strong> نظام ذكاء اصطناعي يتخذ قرار التشويش أو الهجوم الحركي تلقائياً.</li>
+                    <li><strong>لوحة القيادة التكتيكية (Dashboard):</strong> واجهة تحكم متكاملة تعرض الفيديو، الرادار، وبيانات التهديد.</li>
+                </ol>
+            </div>
+
+            <h2 class="section-title">4. تكامل النظام والتطبيق في أرض الواقع</h2>
+            <div class="text-body">
+                لا يقتصر مشروع MCDIS على كونه بيئة محاكاة فقط، بل صُمم ليكون العقل البرمجي المركزي (Middleware) القابل للاندماج الفوري مع الأنظمة العسكرية والهاردوير الفعلي:
+            </div>
+            
+            <h3>تكامل النظام (System Integration)</h3>
+            <div class="text-body" style="margin-top:0;">
+                <ul>
+                    <li><strong>التوافقية:</strong> يمكن للنظام استقبال تدفقات الفيديو المباشرة (RTSP Streams) من كاميرات المراقبة الحالية أو الرادارات المتواجدة في المنشأة دون الحاجة لتغيير البنية التحتية.</li>
+                    <li><strong>نظام التنبيهات والأوامر (API/Sockets):</strong> يرسل MCDIS أوامر رقمية عبر الشبكة (Trigger Signals) يمكنها التحكم في مفاتيح إلكترونية لتشغيل أجهزة التشويش، أو إعطاء الإحداثيات الدقيقة (س، ص) لمنصة إطلاق الصواريخ عبر بروتوكولات اتصال قياسية.</li>
+                </ul>
+            </div>
+
+            <h3>كيفية التطبيق في أرض الواقع (Real-World Deployment)</h3>
+            <div class="text-body" style="margin-top:0;">
+                لتطبيق النظام فعلياً على الأرض، يتطلب الأمر دمج برمجياتنا (MCDIS) مع المكونات الفيزيائية (Hardware) كالتالي:
+                <ul>
+                    <li><strong>طبقة الرصد (Vision Hardware):</strong> ربط النظام بكاميرات حرارية و بصرية عالية الدقة (مثل كاميرات PTZ أو FLIR) مثبتة على قاعدة متحركة (Gimbal) موجهة آلياً بناءً على أوامر التتبع من النظام.</li>
+                    <li><strong>طبقة التشويش (RF Hardware):</strong> توصيل النظام بأجهزة الراديو المعرفة برمجياً (SDRs مثل HackRF أو USRP) مقترنة بمكبرات طاقة (RF Power Amplifiers) لبث إشارات التشويش بالترددات التي حددها النظام تلقائياً.</li>
+                    <li><strong>طبقة الهجوم (Kinetic Hardware):</strong> ربط محرك الـ Countermeasure بمنصة إطلاق الطائرات الانتحارية أو أنظمة الأسلحة الأوتوماتيكية، بحيث تقوم منصة الإطلاق بضبط زاويتها فور تلقي الإحداثيات الدقيقة والمحدثة لحظياً من النظام (CSRT Tracker).</li>
+                    <li><strong>وحدات الحوسبة الطرفية (Edge Computing):</strong> نظراً للحاجة إلى سرعة استجابة فائقة لمعالجة الفيديو بالذكاء الاصطناعي، يتم تشغيل النظام على حواسيب ميدانية مدمجة (مثل NVIDIA Jetson Orin) توفر معالجة فورية (Zero-Latency) في موقع الحدث.</li>
+                </ul>
+            </div>
+
+            <div class="section-title" style="background-color: #2ecc71; color: white; border: none; text-align: center; margin-top: 40px; border-radius: 5px;">
+                الخلاصة (System Ready Status)
+            </div>
+            <div class="text-body" style="text-align: center; font-weight: bold; color: #27ae60;">
+                برمجيات MCDIS مصممة كـ Plug-and-Play، جاهزة تماماً ليتم تثبيتها كبرمجيات قيادة وسيطرة (C2) فوق أي منظومة هاردوير، لتقوم بتحويل المنظومة من العمل اليدوي إلى منظومة ردع جوي أوتوماتيكية وذكية بالكامل.
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

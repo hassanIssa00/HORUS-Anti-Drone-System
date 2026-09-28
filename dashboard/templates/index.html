@@ -1,0 +1,3166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCDIS C2 | Tactical Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=YOUR_KEY_HERE"></script> <!-- We'll use the free version -->
+    <script src="{{ url_for('static', filename='tactical_3d.js') }}"></script>
+
+    <style>
+        /* ── Extra live-state styles ── */
+        .engage-opt          { cursor: pointer; transition: all .2s; }
+        .engage-opt:hover    { box-shadow: 0 0 12px var(--accent-cyan); transform: scale(1.03); }
+        .engage-opt.active   { border-color: var(--accent-red) !important; box-shadow: 0 0 14px var(--accent-red-glow); }
+        .btn-fire-main.armed { background: linear-gradient(135deg, rgba(255,23,68,.35), rgba(255,23,68,.15));
+                               border-color: var(--accent-red); animation: fire-pulse 1s infinite alternate; }
+        @keyframes fire-pulse { from { box-shadow: 0 0 8px var(--accent-red-glow); }
+                                 to   { box-shadow: 0 0 22px var(--accent-red); } }
+        .log-row-critical td { color: var(--accent-red) !important; }
+        .log-row-high     td { color: var(--accent-amber) !important; }
+        .log-row-elevated td { color: #ffe57f !important; }
+        /* threat dial animation */
+        .threat-dial-fill { transition: stroke .6s, stroke-dashoffset .6s; }
+        /* radar */
+        #radar-canvas { position:absolute; top:0; left:0; width:100%; height:100%; }
+        /* target drone SVG spin */
+        @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .drone-svg.active { animation: spin-slow 4s linear infinite; }
+        /* blinking REC */
+        @keyframes blink { 50% { opacity: 0; } }
+        #feed-status { animation: blink 1.2s step-start infinite; }
+        /* engagement status badge */
+        .sts-armed  { background: rgba(255,23,68,.2)  !important; color: var(--accent-red)   !important; }
+        .sts-ready  { background: rgba(0,230,118,.1)  !important; color: var(--accent-green)  !important; }
+        .sts-active { background: rgba(255,145,0,.2)  !important; color: var(--accent-amber)  !important; }
+        /* scenario buttons */
+        .sim-btn { font-family: var(--font-mono); font-size:.7rem; padding:4px 8px;
+                   background: transparent; border: 1px solid; cursor:pointer; transition:.2s;
+                   border-radius:3px; letter-spacing:.05em; }
+        .sim-btn:hover { filter: brightness(1.4); }
+        /* confirm modal */
+        #confirm-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.7);
+                         z-index:10000; align-items:center; justify-content:center; }
+        #confirm-modal.show { display:flex; }
+        .modal-box { background:#050c14; border:1px solid var(--accent-red);
+                     padding:28px 36px; border-radius:6px; text-align:center;
+                     box-shadow:0 0 30px var(--accent-red-glow); max-width:380px; }
+        .modal-box h2 { font-family:var(--font-header); color:var(--accent-red); margin-bottom:10px; font-size:1.1rem; }
+        .modal-box p  { font-family:var(--font-mono); font-size:.75rem; color:var(--text-muted); margin-bottom:18px; }
+        .modal-btns   { display:flex; gap:12px; justify-content:center; }
+        .modal-btns button { font-family:var(--font-mono); font-size:.8rem; padding:7px 20px;
+                             border-radius:4px; cursor:pointer; border:1px solid; }
+        .btn-confirm  { background:rgba(255,23,68,.2); border-color:var(--accent-red); color:var(--accent-red); }
+        .btn-abort    { background:transparent; border-color:var(--border-dim); color:var(--text-muted); }
+        /* Visual Effects */
+        @keyframes laser-flash { 0%{box-shadow:inset 0 0 0 transparent} 50%{box-shadow:inset 0 0 100px rgba(255,0,0,0.5)} 100%{box-shadow:inset 0 0 0 transparent} }
+        body.effect-laser { animation: laser-flash 0.3s 5; }
+        @keyframes emp-wave { 0%{filter:invert(0)} 50%{filter:invert(1) hue-rotate(180deg)} 100%{filter:invert(0)} }
+        body.effect-emp { animation: emp-wave 0.5s 3; }
+        
+        .tac-select { background:var(--bg-panel); color:var(--accent-cyan); border:1px solid var(--accent-cyan); padding:4px 8px; font-family:var(--font-mono); font-size:0.7rem; outline:none; margin-right:15px; cursor:pointer;}
+        .ota-btn { border-color:var(--accent-amber); color:var(--accent-amber); padding:4px 8px; font-size:0.7rem; margin-right:15px; cursor:pointer;}
+
+        /* RBAC Login Overlay */
+        #rbac-overlay { position:fixed; inset:0; background:#02060b; z-index:99999; display:none; flex-direction:column; align-items:center; justify-content:center; }
+        .rbac-box { background:rgba(0,15,30,0.8); border:1px solid var(--accent-cyan); padding:40px; border-radius:8px; box-shadow:0 0 30px rgba(0,229,255,0.2); width:350px; text-align:center; }
+        .rbac-logo { font-size:3rem; margin-bottom:10px; }
+        .rbac-title { color:var(--accent-cyan); font-family:var(--font-header); font-size:1.4rem; letter-spacing:2px; margin-bottom:20px; }
+        .rbac-input { width:100%; background:transparent; border:1px solid var(--border-dim); padding:12px; color:var(--text-bright); font-family:var(--font-mono); font-size:1rem; margin-bottom:15px; box-sizing:border-box; outline:none; text-align:center; letter-spacing:3px;}
+        .rbac-input:focus { border-color:var(--accent-cyan); box-shadow:inset 0 0 10px rgba(0,229,255,0.2); }
+        .rbac-btn { width:100%; background:var(--accent-cyan); color:#000; border:none; padding:12px; font-family:var(--font-header); font-size:1rem; cursor:pointer; font-weight:bold; letter-spacing:1px; transition:0.2s;}
+        .rbac-btn:hover { box-shadow:0 0 15px var(--accent-cyan); }
+        .rbac-error { color:var(--accent-red); font-family:var(--font-mono); font-size:0.8rem; margin-top:15px; height:15px; }
+        .rbac-disclaimer { margin-top:30px; font-family:var(--font-mono); font-size:0.6rem; color:var(--text-dim); max-width:400px; text-align:center; }
+
+        /* Captured Targets Gallery */
+        .gallery-item { border: 1px solid var(--accent-cyan); border-radius: 4px; overflow: hidden; position: relative; min-width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; background: #000; flex-shrink: 0; transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 0 10px rgba(0,229,255,0.1); cursor: pointer;}
+        .gallery-item:hover { transform: scale(1.15); z-index: 20; border-color: #fff; box-shadow: 0 0 20px var(--accent-cyan); }
+        .gallery-item img { width: 100%; height: 100%; object-fit: cover; filter: contrast(1.1); }
+        .gallery-item .tgt-label { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(0deg, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0)); font-size: 0.55rem; color: var(--accent-cyan); text-align: center; padding: 15px 4px 4px 4px; font-family: var(--font-mono); letter-spacing: 0.5px; }
+        @keyframes criticalPulse {
+            0% { box-shadow: 0 0 10px rgba(255,23,68,0.2); transform: scale(1); }
+            50% { box-shadow: 0 0 25px rgba(255,23,68,0.6); transform: scale(1.02); }
+            100% { box-shadow: 0 0 10px rgba(255,23,68,0.2); transform: scale(1); }
+        }
+        .gallery-item.threat-CRITICAL { border-color: var(--accent-red); animation: criticalPulse 1.5s infinite; }
+        .gallery-item.threat-CRITICAL:hover { animation: none; transform: scale(1.15); z-index: 20; border-color: #fff; box-shadow: 0 0 30px var(--accent-red); }
+        .gallery-item.threat-CRITICAL .tgt-label { color: var(--accent-red); text-shadow: 0 0 8px rgba(255,0,0,0.8); }
+        .gallery-item.threat-BIRD { border-color: var(--accent-green); box-shadow: 0 0 10px rgba(0,230,118,0.2); }
+        .gallery-item.threat-BIRD:hover { box-shadow: 0 0 20px var(--accent-green); }
+        .gallery-item.threat-BIRD .tgt-label { color: var(--accent-green); }
+        
+        /* AI Scanning Effect */
+        @keyframes scanline { 0% { top: 0; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+        .ai-scanning { position: relative; }
+        .ai-scanning::after { content: ''; position: absolute; left: 0; right: 0; height: 2px; background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); animation: scanline 1s linear infinite; z-index: 5; }
+        .ai-scanning.threat-CRITICAL::after { background: var(--accent-red); box-shadow: 0 0 8px var(--accent-red); }
+
+        /* ── Live Target Crop in TARGET INFORMATION panel ── */
+        #tgt-schematic-wrap {
+            position: relative;
+            width: 110px;
+            min-width: 110px;
+            height: 110px;
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1px solid rgba(0,229,255,0.2);
+            border-radius: 4px;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #tgt-live-img {
+            display: none;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(1.15) brightness(1.05);
+            transition: opacity 0.4s;
+        }
+        #tgt-live-img.visible { display: block; }
+
+        #tgt-drone-svg-wrap {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.4s;
+        }
+        #tgt-drone-svg-wrap.hidden { opacity: 0; pointer-events: none; }
+        /* Tactical corner frame on the image */
+        #tgt-schematic-wrap::before,
+        #tgt-schematic-wrap::after {
+            content: '';
+            position: absolute;
+            width: 16px; height: 16px;
+            border-color: var(--accent-cyan);
+            border-style: solid;
+            z-index: 5;
+        }
+        #tgt-schematic-wrap::before { top: 4px; left: 4px; border-width: 2px 0 0 2px; }
+        #tgt-schematic-wrap::after  { bottom: 4px; right: 4px; border-width: 0 2px 2px 0; }
+        /* Red scan line on new detection */
+        @keyframes tgt-scan { 0%{top:0;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
+        #tgt-scan-line {
+            display: none;
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background: var(--accent-red);
+            box-shadow: 0 0 8px var(--accent-red);
+            z-index: 6;
+            animation: tgt-scan 0.8s linear;
+        }
+        #tgt-scan-line.active { display: block; }
+        /* IFF badge overlay */
+        #tgt-iff-badge {
+            display: none;
+            position: absolute;
+            bottom: 5px; left: 5px;
+            font-family: var(--font-mono);
+            font-size: 0.5rem;
+            font-weight: bold;
+            letter-spacing: 1px;
+            padding: 2px 5px;
+            border-radius: 2px;
+            z-index: 7;
+            border: 1px solid;
+        }
+        #tgt-iff-badge.visible { display: block; }
+        #tgt-conf-overlay {
+            display: none;
+            position: absolute;
+            top: 5px; right: 5px;
+            font-family: var(--font-mono);
+            font-size: 0.5rem;
+            color: #fff;
+            background: rgba(0,0,0,0.6);
+            padding: 1px 4px;
+            border-radius: 2px;
+            z-index: 7;
+        }
+        #tgt-conf-overlay.visible { display: block; }
+
+        /* ── Advanced Tactical Alarm Effects ── */
+        @keyframes full-screen-red-pulse {
+            0% { background: rgba(255, 0, 0, 0); }
+            50% { background: rgba(255, 0, 0, 0.25); }
+            100% { background: rgba(255, 0, 0, 0); }
+        }
+        .alarm-active #main-header { border-bottom: 2px solid var(--accent-red); box-shadow: 0 0 20px rgba(255,0,0,0.4); }
+        .alarm-active .panel { border-color: var(--accent-red) !important; box-shadow: 0 0 15px rgba(255,0,0,0.2) !important; }
+        
+        #alarm-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 99998;
+            animation: full-screen-red-pulse 0.8s infinite;
+        }
+        .alarm-active #alarm-overlay { display: block; }
+
+        @keyframes screen-shake {
+            0% { transform: translate(0,0); }
+            25% { transform: translate(3px, 3px); }
+            50% { transform: translate(-3px, -3px); }
+            75% { transform: translate(3px, -3px); }
+            100% { transform: translate(0,0); }
+        }
+        .alarm-active body { animation: screen-shake 0.1s infinite; overflow: hidden; }
+        .alarm-active #main-content { filter: sepia(1) saturate(5) hue-rotate(-50deg); } /* Intense Red Tint */
+
+        #critical-alert-banner {
+            display: none;
+            position: fixed;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 23, 68, 0.9);
+            color: #fff;
+            padding: 20px 60px;
+            font-family: var(--font-header);
+            font-size: 2.5rem;
+            letter-spacing: 5px;
+            z-index: 99999;
+            border: 4px solid #fff;
+            box-shadow: 0 0 50px #ff1744;
+            clip-path: polygon(5% 0, 100% 0, 95% 100%, 0 100%);
+        }
+        .alarm-active #critical-alert-banner { display: block; animation: blink 0.4s infinite; }
+    </style>
+</head>
+<body>
+
+
+
+<!-- CRT Overlay -->
+<div class="scanline-overlay"></div>
+
+<!-- Tactical Alarm Elements -->
+<div id="alarm-overlay"></div>
+<div id="critical-alert-banner">CRITICAL THREAT DETECTED</div>
+
+<!-- ── Confirm Modal ── -->
+<div id="confirm-modal">
+    <div class="modal-box">
+        <h2 id="modal-title">⚠ ENGAGEMENT AUTHORIZATION</h2>
+        <p id="modal-msg">Confirm kinetic engagement against active target?</p>
+        <div class="modal-btns">
+            <button class="btn-confirm" id="modal-confirm-btn">✓ AUTHORIZE</button>
+            <button class="btn-abort"   onclick="closeModal()">✕ ABORT</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Top Header ── -->
+<header id="main-header">
+    <div class="header-logo">
+        <span class="logo-icon">🛡️</span>
+        <div class="logo-text">
+            <h1>MCDIS C2</h1>
+            <span class="sub">MULTI-DOMAIN COUNTER UAS SYSTEM</span>
+        </div>
+    </div>
+    <div class="header-center-nav">
+        <span class="nav-item active">DASHBOARD</span>
+        <span class="nav-item">TACTICAL MAP</span>
+        <span class="nav-item">SENSORS</span>
+        <span class="nav-item">THREATS</span>
+        <span class="nav-item">WEAPONS</span>
+        <span class="nav-item">LOGS</span>
+    </div>
+    <div class="header-stats">
+        <div class="h-stat">
+            <span class="label">SYSTEM STATUS</span>
+            <span class="value val-green" id="hdr-status">OPERATIONAL</span>
+        </div>
+        <div class="h-stat">
+            <span class="label">THREAT LEVEL</span>
+            <span class="value val-amber" id="hdr-threat">MINIMAL</span>
+        </div>
+        <div class="h-stat">
+            <span class="label">TOTAL DETECTIONS</span>
+            <span class="value val-cyan" id="hdr-detections">0</span>
+        </div>
+        <div class="h-stat" style="border-left: 1px solid var(--border-dim); padding-left: 15px; margin-left: 5px;">
+            <span class="label">FALSE POSITIVES</span>
+            <span class="value" id="hdr-fp" style="color: #b0bec5;">0.0%</span>
+        </div>
+        <div class="h-stat">
+            <span class="label">AVG RESPONSE</span>
+            <span class="value" id="hdr-resp" style="color: #b0bec5;">-- s</span>
+        </div>
+        <div class="h-stat">
+            <span class="label">SYS MTBF</span>
+            <span class="value" id="hdr-mtbf" style="color: var(--accent-green);">99.9h</span>
+        </div>
+        <div class="h-stat" style="border-left: 1px solid var(--border-dim); padding-left: 15px; margin-left: 5px;">
+            <span class="label" id="utc-clock-label">--:--:-- UTC</span>
+            <span class="value" id="uptime-value">00:00:00</span>
+        </div>
+
+        <!-- Node Selector -->
+        <select id="node-selector" class="tac-select" onchange="changeNode(this.value)">
+            <option value="NODE-ALPHA">NODE-ALPHA (HQ)</option>
+            <option value="NODE-BRAVO">NODE-BRAVO (FWD)</option>
+            <option value="NODE-CHARLIE">NODE-CHARLIE (SEA)</option>
+        </select>
+
+        <!-- OTA Update Button -->
+        <button id="btn-ota" class="tac-btn ota-btn" onclick="triggerOTAUpdate()">OTA UPDATE</button>
+
+        <!-- Master Alarm Toggle -->
+        <button id="btn-master-alarm" class="tac-btn" style="border-color:var(--accent-red); color:var(--accent-red); padding:4px 8px; font-size:0.7rem; margin-right:15px; cursor:pointer; font-weight:bold;" onclick="toggleManualAlarm()">MASTER ALARM: READY</button>
+
+        <div class="operator-profile">
+            <span class="op-icon">👤</span>
+            <div class="op-details"><span>OPERATOR</span><span class="rank" id="op-rank-display">COMMANDER (DEV)</span></div>
+        </div>
+    </div>
+</header>
+
+<!-- ── Main Grid Layout ── -->
+<main id="dashboard-core">
+
+    <!-- COLUMN 1: Sidebar -->
+    <nav id="sidebar">
+        <div class="side-btn active" onclick="sideNav(this,'dashboard')">
+            <span class="icon">⊞</span><span>DASHBOARD</span>
+        </div>
+        <div class="side-btn" onclick="sideNav(this,'maps')">
+            <span class="icon">🗺</span><span>MAPS</span>
+        </div>
+        <div class="side-btn" onclick="sideNav(this,'sensors')">
+            <span class="icon">📡</span><span>SENSORS</span>
+        </div>
+        <div class="side-btn" onclick="sideNav(this,'threats')">
+            <span class="icon">⚠️</span><span>THREATS</span>
+        </div>
+        <div class="side-btn" onclick="sideNav(this,'weapons')">
+            <span class="icon">🚀</span><span>WEAPONS</span>
+        </div>
+        <div class="side-btn" style="margin-top:auto;" onclick="sideNav(this,'settings')">
+            <span class="icon">⚙</span><span>SETTINGS</span>
+        </div>
+    </nav>
+
+    <!-- View Container: Dashboard -->
+    <div id="view-dashboard" class="view-section active" style="display: contents;">
+        <!-- COLUMN 2: Left Panels -->
+        <div class="column-left">
+
+        <!-- Threat Dial -->
+        <div class="panel">
+            <div class="panel-title">THREAT LEVEL ASSESSMENT</div>
+            <div class="panel-content">
+                <div class="threat-dial-container">
+                    <svg class="threat-dial-svg" viewBox="0 0 100 100">
+                        <circle class="threat-dial-bg"   cx="50" cy="50" r="40"></circle>
+                        <circle class="threat-dial-fill" cx="50" cy="50" r="40"
+                                id="threat-dial-fill"
+                                style="stroke-dasharray:251; stroke-dashoffset:251;"></circle>
+                    </svg>
+                    <div class="threat-dial-text">
+                        <div class="lvl" id="threat-level-label">MINIMAL</div>
+                        <div class="sub">RISK LEVEL</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Health -->
+        <div class="panel" style="flex:1.2;">
+            <div class="panel-title">SYSTEM HEALTH</div>
+            <div class="panel-content panel-scrollable">
+                <div class="health-item">
+                    <span class="health-label">VISION ENGINE</span>
+                    <div class="health-bar-container"><div class="health-bar-fill" id="hb-vision" style="width:98%"></div></div>
+                    <span class="health-val" id="hv-vision">98%</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">RF SCANNER</span>
+                    <div class="health-bar-container"><div class="health-bar-fill" id="hb-rf" style="width:95%"></div></div>
+                    <span class="health-val" id="hv-rf">95%</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">ACOUSTIC ARRAY</span>
+                    <div class="health-bar-container"><div class="health-bar-fill" id="hb-ac" style="width:90%"></div></div>
+                    <span class="health-val" id="hv-ac">90%</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">RADAR SYSTEM</span>
+                    <div class="health-bar-container"><div class="health-bar-fill" id="hb-radar" style="width:99%"></div></div>
+                    <span class="health-val" id="hv-radar">99%</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">DATABASE</span>
+                    <div class="health-bar-container"><div class="health-bar-fill" style="width:100%"></div></div>
+                    <span class="health-val">100%</span>
+                </div>
+                <div class="health-item">
+                    <span class="health-label">C2 UPLINK</span>
+                    <div class="health-bar-container"><div class="health-bar-fill" id="hb-c2" style="width:100%"></div></div>
+                    <span class="health-val" id="hv-c2">100%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Radar -->
+        <div class="panel">
+            <div class="panel-title">SPATIAL RADAR</div>
+            <div class="panel-content" style="position:relative;min-height:130px;padding:0;overflow:hidden;">
+                <canvas id="radar-canvas"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMN 3: Central Workspace -->
+    <div class="column-center">
+
+        <!-- Tactical Video Feed -->
+        <div class="tactical-view panel">
+            <div class="panel-title">
+                <span>◎ TACTICAL AIRSPACE VIEW / OPTICAL FEED</span>
+                <span style="color:var(--accent-red);" id="feed-status">● STANDBY</span>
+            </div>
+            <div class="tac-feed-container">
+                <img id="video-img" src="{{ url_for('video_feed') }}" alt="Tactical Feed" style="display:block; width:100%; height:100%; object-fit:fill;"
+                     onerror="videoError()">
+                <div id="standby-msg" style="display:none;position:absolute;color:var(--accent-cyan);
+                     font-family:var(--font-mono);text-align:center;top:50%;left:50%;
+                     transform:translate(-50%,-50%);">
+                    <div style="font-size:1.6rem;margin-bottom:8px;">◎ NO SIGNAL</div>
+                    <div style="font-size:.75rem;">SELECT TARGET FEED BELOW TO ACTIVATE</div>
+                </div>
+                <div class="feed-hud-overlay"></div>
+                <div class="feed-corners"></div>
+                <div class="compass-ring" id="compass-az">0°</div>
+                <!-- HUD Crosshair Overlay -->
+                <div style="position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:3;">
+                    <!-- Center crosshair -->
+                    <div style="position:absolute;top:50%;left:calc(50% - 30px);width:60px;height:1px;background:rgba(0,229,255,0.2);"></div>
+                    <div style="position:absolute;left:50%;top:calc(50% - 30px);width:1px;height:60px;background:rgba(0,229,255,0.2);"></div>
+                    <!-- Range arc indicators -->
+                    <div style="position:absolute;top:50%;left:50%;width:120px;height:120px;border:1px solid rgba(0,229,255,0.08);border-radius:50%;transform:translate(-50%,-50%);"></div>
+                    <div style="position:absolute;top:50%;left:50%;width:240px;height:240px;border:1px dashed rgba(0,229,255,0.05);border-radius:50%;transform:translate(-50%,-50%);"></div>
+                    <!-- Bearing marks top -->
+                    <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);font-family:var(--font-mono);font-size:0.5rem;color:rgba(0,229,255,0.3);letter-spacing:8px;">|·····|·····|</div>
+                    <!-- Timestamp overlay -->
+                    <div style="position:absolute;bottom:8px;left:10px;font-family:var(--font-mono);font-size:0.5rem;color:rgba(0,229,255,0.4);" id="hud-timestamp">--:--:-- UTC</div>
+                    <div style="position:absolute;bottom:8px;right:10px;font-family:var(--font-mono);font-size:0.5rem;color:rgba(0,229,255,0.4);">MCDIS AI VISION v3</div>
+                    <!-- Tactical Compass -->
+                    <div class="compass-ring">
+                        <div id="compass-needle"></div>
+                        <span id="compass-az">0°</span>
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Live Sensor Feeds -->
+        <div class="panel">
+            <div class="panel-title">LIVE SENSOR FEEDS</div>
+            <div class="panel-content">
+                <div class="sensor-feeds-row">
+
+                    <!-- THERMAL -->
+                    <div class="mini-sensor" id="sensor-thermal" style="position: relative; overflow: hidden; height: 100%;">
+                        <div class="ms-label">THRM - FLIR (CV ENGINE)</div>
+                        <img id="thermal-feed-img" src="/thermal_feed" style="width:100%;height:100%;object-fit:cover;display:block;">
+                    </div>
+
+                    <!-- NVG -->
+                    <div class="mini-sensor" id="sensor-nvg">
+                        <div class="ms-label">NVG - GEN3</div>
+                        <canvas id="nvg-canvas" style="width:100%;height:80px;"></canvas>
+                        <div id="nvg-status" style="position:absolute;top:50%;left:50%;
+                             transform:translate(-50%,-50%);font-family:var(--font-mono);
+                             font-size:.6rem;color:rgba(0,230,118,.5);">SENSOR STANDBY</div>
+                    </div>
+
+                    <!-- ACOUSTIC -->
+                    <div class="mini-sensor" id="sensor-acoustic">
+                        <div class="ms-label">ACOUSTIC ARRAY</div>
+                        <canvas id="acoustic-canvas" style="width:100%;height:80px;"></canvas>
+                        <div id="acoustic-status" style="position:absolute;top:50%;left:50%;
+                             transform:translate(-50%,-50%);font-family:var(--font-mono);
+                             font-size:.6rem;color:rgba(0,229,255,.5);">LISTENING</div>
+                    </div>
+
+                    <!-- WEATHER -->
+                    <div class="mini-sensor">
+                        <div class="ms-label">ENVT &amp; WEATHER</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:5px;padding:25px 5px 5px;">
+                            <div style="flex:1;background:rgba(0,0,0,.5);padding:2px;text-align:center;
+                                        border:1px solid rgba(0,229,255,.2);">
+                                <div id="env-temp" style="color:var(--text-bright);font-size:.7rem;">22°C</div>
+                                <div style="font-size:.4rem;color:var(--accent-cyan);">TEMP</div></div>
+                            <div style="flex:1;background:rgba(0,0,0,.5);padding:2px;text-align:center;
+                                        border:1px solid rgba(0,229,255,.2);">
+                                <div id="env-wind" style="color:var(--text-bright);font-size:.7rem;">12 kn</div>
+                                <div style="font-size:.4rem;color:var(--accent-cyan);">WIND</div></div>
+                            <div style="flex:1;background:rgba(0,0,0,.5);padding:2px;text-align:center;
+                                        border:1px solid rgba(0,229,255,.2);">
+                                <div id="env-hum" style="color:var(--text-bright);font-size:.7rem;">65%</div>
+                                <div style="font-size:.4rem;color:var(--accent-cyan);">HUMDTY</div></div>
+                        </div>
+                    </div>
+                    
+                    <!-- LIDAR -->
+                    <div class="mini-sensor" id="sensor-lidar">
+                        <div class="ms-label">LIDAR POINT CLOUD</div>
+                        <canvas id="lidar-canvas" style="width:100%;height:80px;"></canvas>
+                        <div id="lidar-status" style="position:absolute;top:50%;left:50%;
+                             transform:translate(-50%,-50%);font-family:var(--font-mono);
+                             font-size:.6rem;color:rgba(0,230,118,.5); text-align: center;">PENETRATING DUST<br><span style="color:#00e5ff">SCANNING</span></div>
+                    </div>
+                    
+                    <!-- PASSIVE RADAR -->
+                    <div class="mini-sensor" id="sensor-passive-radar">
+                        <div class="ms-label">PASSIVE RF (GSM/WIFI)</div>
+                        <canvas id="passive-canvas" style="width:100%;height:80px;"></canvas>
+                        <div id="passive-status" style="position:absolute;top:50%;left:50%;
+                             transform:translate(-50%,-50%);font-family:var(--font-mono);
+                             font-size:.6rem;color:var(--accent-cyan); text-align: center;">ZERO EMISSION<br>LISTENING REFLECTIONS</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COLUMN 4: Right Controls -->
+    <div class="column-right">
+
+        <!-- Target Info -->
+        <div class="panel">
+            <div class="panel-title">TARGET INFORMATION</div>
+            <div class="panel-content">
+                <div class="target-schematic">
+                    <!-- Live capture container: shows SVG when idle, real image on detection -->
+                    <div id="tgt-schematic-wrap">
+                        <!-- SVG schematic (shown when no detection) -->
+                        <div id="tgt-drone-svg-wrap">
+                            <svg class="drone-svg" id="tgt-drone-svg" viewBox="0 0 100 100" style="width:90px;height:90px;">
+                                <circle cx="50" cy="50" r="10"></circle>
+                                <line x1="50" y1="50" x2="20" y2="20"></line>
+                                <line x1="50" y1="50" x2="80" y2="20"></line>
+                                <line x1="50" y1="50" x2="20" y2="80"></line>
+                                <line x1="50" y1="50" x2="80" y2="80"></line>
+                                <circle cx="20" cy="20" r="15" stroke-dasharray="2,4"></circle>
+                                <circle cx="80" cy="20" r="15" stroke-dasharray="2,4"></circle>
+                                <circle cx="20" cy="80" r="15" stroke-dasharray="2,4"></circle>
+                                <circle cx="80" cy="80" r="15" stroke-dasharray="2,4"></circle>
+                                <!-- Crosshair when target locked -->
+                                <line id="tgt-cross-h" x1="35" y1="50" x2="65" y2="50" stroke="var(--accent-red)" stroke-width="0.5" opacity="0"></line>
+                                <line id="tgt-cross-v" x1="50" y1="35" x2="50" y2="65" stroke="var(--accent-red)" stroke-width="0.5" opacity="0"></line>
+                            </svg>
+                        </div>
+                        <!-- Real captured image (hidden until detection) -->
+                        <img id="tgt-live-img" src="" alt="Captured Target">
+                        <!-- Scan line effect on new detection -->
+                        <div id="tgt-scan-line"></div>
+                        <!-- IFF badge bottom-left -->
+                        <div id="tgt-iff-badge">HOSTILE</div>
+                        <!-- Confidence top-right -->
+                        <div id="tgt-conf-overlay">CONF: --</div>
+                    </div>
+
+                    <div class="t-data-list">
+                        <div class="t-row"><span>TARGET ID</span>    <span id="tgt-id">---</span></div>
+                        <div class="t-row"><span>MODEL / NAME</span> <span id="tgt-model" style="color:var(--accent-cyan);font-weight:bold;">---</span></div>
+                        <div class="t-row" id="tgt-class-row"><span>CATEGORY</span><span id="tgt-class" class="tgt-category">UNKNOWN</span></div>
+                        <div class="t-row"><span>CLASS TYPE</span>   <span id="tgt-type">---</span></div>
+                        <div class="t-row"><span>SPEED</span>        <span id="tgt-speed">--- km/h</span></div>
+                        <div class="t-row"><span>TRAJECTORY</span>   <span id="tgt-bearing">---°</span></div>
+                        <div class="t-row" id="tgt-score-row"><span>THREAT SCORE</span><span id="tgt-score">--%</span></div>
+                        <div class="t-row"><span>IFF STATUS</span>   <span id="tgt-iff" style="font-weight:bold;">UNKNOWN</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Engagement Options — v2.0 Full Panel -->
+        <div class="panel" id="engagement-panel">
+            <div class="panel-title">ENGAGEMENT OPTIONS — AI ASSISTED</div>
+            <div class="panel-content" style="padding:8px;">
+
+                <!-- ISR Pre-Check Widget -->
+                <div id="isr-widget" style="
+                    background: linear-gradient(135deg,rgba(0,15,30,0.9),rgba(0,5,15,0.9));
+                    border: 1px solid rgba(0,229,255,0.3);
+                    border-radius:4px; padding:7px 10px; margin-bottom:8px;
+                    display:flex; align-items:center; gap:10px; cursor:pointer;
+                    transition:all .3s;" onclick="runISRCheck()" title="Run ISR Pre-Check">
+                    <div style="text-align:center; min-width:52px;">
+                        <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--text-dim);">ISR</div>
+                        <div id="isr-pct-display" style="font-family:var(--font-header);font-size:1.1rem;color:#00e5ff;line-height:1;">---%</div>
+                        <div id="isr-gonogo" style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-dim);">PENDING</div>
+                    </div>
+                    <div style="flex:1; border-left:1px solid rgba(0,229,255,0.15); padding-left:10px;">
+                        <div style="font-family:var(--font-mono);font-size:0.55rem;color:var(--accent-cyan); margin-bottom:2px;">RECOMMENDED</div>
+                        <div id="isr-recommended" style="font-family:var(--font-header);font-size:0.65rem;color:#fff;">--- RUN CHECK ---</div>
+                        <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-dim); margin-top:2px;">ALT: <span id="isr-alternative" style="color:var(--accent-amber);">---</span></div>
+                    </div>
+                    <div style="text-align:center; min-width:45px;">
+                        <div style="font-family:var(--font-mono);font-size:0.5rem;color:var(--text-dim);">FUZZY</div>
+                        <div id="fuzzy-score-display" style="font-family:var(--font-header);font-size:0.85rem;color:#ff6e00;line-height:1;">--</div>
+                        <div id="fuzzy-level-display" style="font-family:var(--font-mono);font-size:0.45rem;color:var(--text-dim);">---</div>
+                    </div>
+                </div>
+
+                <!-- 4×3 Engagement Grid -->
+                <div class="eng-grid" style="grid-template-columns:repeat(3,1fr); gap:5px;">
+
+                    <!-- Row 1: Soft Kill EW -->
+                    <div class="engage-opt" id="eng-jammer"
+                         onclick="triggerAdvancedEngagement('RF_JAMMING','Activate Broadband RF Jamming?')"
+                         style="border-color:rgba(0,229,255,0.4);">
+                        <span class="icon">📶</span>
+                        <span class="lbl" style="font-size:0.55rem;">RF JAMMER</span>
+                        <span class="sts sts-ready" id="sts-jammer">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-gps"
+                         onclick="triggerAdvancedEngagement('GPS_SPOOFING','Deploy GPS Spoofing?')"
+                         style="border-color:rgba(0,229,255,0.4);">
+                        <span class="icon">🌍</span>
+                        <span class="lbl" style="font-size:0.55rem;">GPS SPOOF</span>
+                        <span class="sts sts-ready" id="sts-gps">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-acoustic"
+                         onclick="triggerAdvancedEngagement('ACOUSTIC_ATTACK','Activate UNROCKER Acoustic?')"
+                         style="border-color:rgba(0,229,255,0.4);">
+                        <span class="icon">🔊</span>
+                        <span class="lbl" style="font-size:0.55rem;">ACOUSTIC</span>
+                        <span class="sts sts-ready" id="sts-acoustic">READY</span>
+                    </div>
+
+                    <!-- Row 2: Hard Kill -->
+                    <div class="engage-opt" id="eng-adversarial"
+                         onclick="triggerAdvancedEngagement('ADVERSARIAL_PATCH','Deploy Visual Blinding?')"
+                         style="border-color:rgba(255,145,0,0.4);">
+                        <span class="icon">👁️</span>
+                        <span class="lbl" style="font-size:0.55rem;">ADVERSARIAL</span>
+                        <span class="sts sts-ready" id="sts-adversarial">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-net"
+                         onclick="triggerAdvancedEngagement('NET_GUN','Deploy Kinetic Net-Gun?', true)"
+                         style="border-color:rgba(255,145,0,0.4);">
+                        <span class="icon">🕸️</span>
+                        <span class="lbl" style="font-size:0.55rem;">NET-GUN</span>
+                        <span class="sts sts-ready" id="sts-net">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-hpm"
+                         onclick="triggerAdvancedEngagement('HPM_MICROWAVE','AUTHORIZE HPM EMP?', true)"
+                         style="border-color:rgba(255,23,68,0.5);">
+                        <span class="icon">☢️</span>
+                        <span class="lbl" style="font-size:0.55rem;">HPM EMP</span>
+                        <span class="sts sts-ready" id="sts-hpm">READY</span>
+                    </div>
+
+                    <!-- Row 3: New Advanced Systems -->
+                    <div class="engage-opt" id="eng-swarm"
+                         onclick="triggerAdvancedEngagement('SWARM_DECOY','Deploy Collaborative Interceptors?')"
+                         style="border-color:rgba(0,229,255,0.4);">
+                        <span class="icon">🐝</span>
+                        <span class="lbl" style="font-size:0.55rem;">COLLAB SWARM</span>
+                        <span class="sts sts-ready" id="sts-swarm">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-laser"
+                         onclick="triggerAdvancedEngagement('DEW_LASER','Fire Directed Energy Laser?', true)"
+                         style="border-color:rgba(255,214,0,0.6); box-shadow:0 0 6px rgba(255,214,0,0.15);">
+                        <span class="icon" style="color:#ffd600;">⚡</span>
+                        <span class="lbl" style="font-size:0.55rem;color:#ffd600;">LASER DEW</span>
+                        <span class="sts" id="sts-laser" style="background:rgba(255,214,0,0.15);color:#ffd600;border-color:#ffd600;">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-chain"
+                         onclick="triggerAdvancedEngagement('INTERCEPTOR_CHAIN','Launch Interceptor Chain?')"
+                         style="border-color:rgba(0,255,136,0.6); box-shadow:0 0 8px rgba(0,255,136,0.2);">
+                        <span class="icon" style="color:#00ff88;">🚁</span>
+                        <span class="lbl" style="font-size:0.55rem;color:#00ff88;">INTERCEPTOR CHAIN</span>
+                        <span class="sts" id="sts-chain" style="background:rgba(0,255,136,0.15);color:#00ff88;border-color:#00ff88;">READY</span>
+                    </div>
+
+                    <!-- Row 4: Cyber + Quantum + ISR -->
+                    <div class="engage-opt" id="eng-cyber"
+                         onclick="triggerAdvancedEngagement('CYBER_TAKEOVER','Initiate Cyber Takeover?')"
+                         style="border-color:rgba(180,0,255,0.5); box-shadow:0 0 6px rgba(180,0,255,0.1);">
+                        <span class="icon" style="color:#b400ff;">💻</span>
+                        <span class="lbl" style="font-size:0.55rem;color:#b400ff;">CYBER TAKEOVER</span>
+                        <span class="sts" id="sts-cyber" style="background:rgba(180,0,255,0.15);color:#b400ff;border-color:#b400ff;">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-quantum"
+                         onclick="triggerAdvancedEngagement('QUANTUM_JAM','Activate Quantum Frequency Sweep?')"
+                         style="border-color:rgba(0,200,255,0.5); box-shadow:0 0 6px rgba(0,200,255,0.1);">
+                        <span class="icon" style="color:#00c8ff;">🌀</span>
+                        <span class="lbl" style="font-size:0.55rem;color:#00c8ff;">QUANTUM JAM</span>
+                        <span class="sts" id="sts-quantum" style="background:rgba(0,200,255,0.15);color:#00c8ff;border-color:#00c8ff;">READY</span>
+                    </div>
+                    <div class="engage-opt" id="eng-isr"
+                         onclick="runISRCheck()"
+                         style="border-color:rgba(0,150,255,0.5); box-shadow:0 0 6px rgba(0,150,255,0.1);">
+                        <span class="icon" style="color:#0096ff;">📊</span>
+                        <span class="lbl" style="font-size:0.55rem;color:#0096ff;">ISR PRE-CHECK</span>
+                        <span class="sts" id="sts-isr" style="background:rgba(0,150,255,0.15);color:#0096ff;border-color:#0096ff;">READY</span>
+                    </div>
+                </div>
+
+                <!-- Auto Engage Button -->
+                <button class="btn-fire-main armed" id="auto-engage-btn"
+                        style="margin-top:8px;" onclick="toggleAutoEngage()">
+                    «« AI AUTO-ENGAGE: ACTIVE »»
+                </button>
+                <span class="confirm-text">FUZZY LOGIC + RANDOM FOREST DECISION MATRIX</span>
+
+                <div style="font-family:var(--font-mono);font-size:.5rem;color:var(--text-dim);
+                            margin-top:5px;display:flex;gap:8px;justify-content:center;">
+                    <span>[Ctrl+J] JAM</span>
+                    <span>[Ctrl+I] INTERCEPT</span>
+                    <span>[Ctrl+Q] QUANTUM</span>
+                    <span>[Ctrl+C] CYBER</span>
+                </div>
+            </div>
+        </div>
+
+        
+        <!-- IFF Registry Panel -->
+        <div class="panel">
+            <div class="panel-title">IFF WHITELIST REGISTRY</div>
+            <div class="panel-content" style="padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="display:flex; gap: 5px;">
+                    <input type="text" id="iff-entity" placeholder="Entity Name (e.g. Police Drone)" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); color: var(--text-bright); padding: 5px; font-family: var(--font-mono); font-size: 0.7rem;">
+                    <input type="text" id="iff-mac" placeholder="MAC / RF Sig" style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--border-dim); color: var(--text-bright); padding: 5px; font-family: var(--font-mono); font-size: 0.7rem;">
+                    <button onclick="registerIFFUnit()" class="tac-btn" style="color: var(--accent-green); border-color: var(--accent-green); padding: 5px 10px;">REGISTER</button>
+                </div>
+                <div id="iff-reg-status" style="font-size: 0.6rem; color: var(--text-dim);">Awaiting registration...</div>
+            </div>
+        </div>
+
+        <!-- CAPTURED TARGETS GALLERY -->
+        <div class="panel" style="flex: none; height: 160px; min-height:160px;">
+            <div class="panel-title">CAPTURED TARGETS</div>
+            <div class="panel-content" style="padding:10px;">
+                <div id="target-gallery" style="display:flex; gap:10px; overflow-x:auto; overflow-y:hidden; height:100%; align-items:center; padding-bottom:5px;">
+                    <!-- Images dynamically injected here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Mission Management Panel -->
+        <div class="panel" style="border-color: var(--accent-cyan); background: rgba(0,229,255,0.05);">
+            <div class="panel-title" style="color: var(--accent-cyan);">MISSION MANAGEMENT</div>
+            <div class="panel-content" style="padding: 15px; text-align: center;">
+                <button id="btn-generate-report" class="tac-btn" style="width: 100%; height: 50px; font-size: 0.9rem; border-color: var(--accent-cyan); color: var(--accent-cyan); background: rgba(0,229,255,0.1); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: 0.3s;" onclick="generateMissionReport()">
+                    <span style="font-size: 1.4rem;">📄</span>
+                    <span id="report-btn-text">GENERATE MISSION REPORT (PDF)</span>
+                </button>
+                <div id="report-status" style="margin-top: 8px; font-family: var(--font-mono); font-size: 0.65rem; color: var(--text-dim);">Finalizes active session intelligence</div>
+            </div>
+        </div>
+
+        <!-- COUNTERMEASURE STATUS PANEL -->
+        <div class="panel" style="flex: none; min-height: 160px; border-color: var(--accent-red);">
+            <div class="panel-title" style="color: var(--accent-red);">LIVE COUNTERMEASURE STATUS</div>
+            <div class="panel-content panel-scrollable" style="padding:10px;">
+                <table class="log-table" style="font-size: 0.65rem;">
+                    <thead><tr><th>SYS</th><th>STATUS</th><th>TGT</th><th>DETAILS</th></tr></thead>
+                    <tbody id="cm-log-body">
+                        <!-- CM statuses injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div> <!-- End view-dashboard -->
+
+    <!-- View Container: MAPS -->
+    <div id="view-maps" class="view-section" style="display:none; flex:1; flex-direction:column; padding:20px; background:var(--bg-main);">
+        <div class="panel" style="flex:1; border-color: var(--accent-cyan);">
+            <div class="panel-title" style="font-size:1.2rem;">3D TACTICAL MAP - URBAN DEFENSE THEATER</div>
+            <div class="panel-content" style="padding:0; position:relative; height:100%; min-height: 600px; background: #000;" id="tactical-3d-container">
+                <!-- Three.js Map Renders Here -->
+                <div style="position:absolute; top:10px; right:10px; background:rgba(0,15,30,0.8); padding:10px; border:1px solid var(--accent-cyan); font-family:var(--font-mono); font-size:0.8rem; color:var(--accent-cyan); z-index: 10;">
+                    <div style="color:#fff; margin-bottom:5px;">3D DIGITAL TWIN ACTIVE</div>
+                    PROJECTION: PERSPECTIVE<br>
+                    RENDERER: WEBGL 2.0<br>
+                    UPLINK: ENCRYPTED
+                </div>
+                <div id="map-controls" style="position:absolute; bottom:20px; left:20px; display:flex; gap:10px; z-index:10;">
+                    <button class="sim-btn" onclick="reset3DCamera()" style="border-color:var(--accent-cyan); color:var(--accent-cyan);">RESET VIEW</button>
+                    <button class="sim-btn" onclick="toggle3DFog()" style="border-color:var(--accent-amber); color:var(--accent-amber);">TOGGLE FOG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Container: SENSORS -->
+    <div id="view-sensors" class="view-section" style="display:none; flex:1; flex-direction:column; padding:20px; background:var(--bg-main);">
+        <div class="panel" style="flex:1;">
+            <div class="panel-title" style="font-size:1.2rem;">SENSOR ARRAY DIAGNOSTICS</div>
+            <div class="panel-content" style="padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                <div style="border:1px solid var(--accent-cyan); background:rgba(0,229,255,0.05); padding:20px; text-align:center;">
+                    <div style="color:var(--accent-cyan); font-size:1.5rem; margin-bottom:10px;">AESA RADAR</div>
+                    <div style="font-size:3rem; color:#fff;">ONLINE</div>
+                    <div style="color:var(--accent-green); margin-top:10px;">SWEEP: 360° | BAND: X-BAND</div>
+                </div>
+                <div style="border:1px solid var(--accent-cyan); background:rgba(0,229,255,0.05); padding:20px; text-align:center;">
+                    <div style="color:var(--accent-cyan); font-size:1.5rem; margin-bottom:10px;">THERMAL OPTICS</div>
+                    <div style="font-size:3rem; color:#fff;">ONLINE</div>
+                    <div style="color:var(--accent-green); margin-top:10px;">RES: 4K | TRACK: AUTO</div>
+                </div>
+                <div style="border:1px solid var(--accent-cyan); background:rgba(0,229,255,0.05); padding:20px; text-align:center;">
+                    <div style="color:var(--accent-cyan); font-size:1.5rem; margin-bottom:10px;">ACOUSTIC ARRAY</div>
+                    <div style="font-size:3rem; color:#fff;">ONLINE</div>
+                    <div style="color:var(--accent-green); margin-top:10px;">NODES: 24 | RANGE: 5KM</div>
+                </div>
+                <div style="border:1px solid var(--accent-cyan); background:rgba(0,229,255,0.05); padding:20px; text-align:center;">
+                    <div style="color:var(--accent-cyan); font-size:1.5rem; margin-bottom:10px;">RF SCANNER</div>
+                    <div style="font-size:3rem; color:#fff;">ONLINE</div>
+                    <div style="color:var(--accent-green); margin-top:10px;">FREQ: 400MHz - 6GHz</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Container: THREATS -->
+    <div id="view-threats" class="view-section" style="display:none; flex:1; flex-direction:column; padding:20px; background:var(--bg-main);">
+        <div class="panel" style="flex:1; border-color:var(--accent-red);">
+            <div class="panel-title" style="font-size:1.2rem; color:var(--accent-red);">GLOBAL THREAT DATABASE</div>
+            <div class="panel-content panel-scrollable" style="padding:20px;">
+                <table class="log-table" style="width:100%; font-size:1rem;">
+                    <thead><tr><th>THREAT ID</th><th>CLASSIFICATION</th><th>FIRST SEEN</th><th>STATUS</th></tr></thead>
+                    <tbody>
+                        <tr><td style="color:var(--accent-red)">SHD-136</td><td>Kamikaze Drone (Fixed Wing)</td><td>2026-04-20</td><td style="color:var(--accent-red)">CRITICAL</td></tr>
+                        <tr><td style="color:var(--accent-red)">FPV-K01</td><td>FPV Kamikaze (Fiber-Optic)</td><td>2026-04-22</td><td style="color:var(--accent-red)">CRITICAL</td></tr>
+                        <tr><td style="color:var(--accent-amber)">DJI-M3</td><td>Commercial Quadcopter</td><td>2026-04-25</td><td style="color:var(--accent-amber)">WARNING</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Container: WEAPONS -->
+    <div id="view-weapons" class="view-section" style="display:none; flex:1; flex-direction:column; padding:20px; background:var(--bg-main);">
+        <div class="panel" style="flex:1;">
+            <div class="panel-title" style="font-size:1.2rem;">WEAPONS & COUNTERMEASURES COMMAND</div>
+            <div class="panel-content" style="padding:20px; display:grid; grid-template-columns:repeat(3, 1fr); gap:20px;">
+                <div class="panel" style="background:rgba(255,23,68,0.05); border-color:var(--accent-red); cursor:pointer;" onclick="triggerEngagement('RF_JAMMING', 'Activate Global RF Jamming?')">
+                    <div class="panel-title" style="color:var(--accent-red); text-align:center;">RF JAMMER</div>
+                    <div class="panel-content" style="text-align:center; padding:20px;">
+                        <span style="font-size:4rem; color:var(--accent-red);">📡</span><br><br>
+                        <span style="color:#fff;">STATUS: ARMED</span>
+                    </div>
+                </div>
+                <div class="panel" style="background:rgba(255,145,0,0.05); border-color:var(--accent-amber); cursor:pointer;" onclick="triggerEngagement('NET_LAUNCHER', 'Deploy Net Launcher?')">
+                    <div class="panel-title" style="color:var(--accent-amber); text-align:center;">NET LAUNCHER</div>
+                    <div class="panel-content" style="text-align:center; padding:20px;">
+                        <span style="font-size:4rem; color:var(--accent-amber);">🕸️</span><br><br>
+                        <span style="color:#fff;">STATUS: ARMED (3/3)</span>
+                    </div>
+                </div>
+                <div class="panel" style="background:rgba(0,229,255,0.05); border-color:var(--accent-cyan); cursor:pointer;" onclick="triggerEngagement('INTERCEPTOR', 'Launch Interceptor Squadron?')">
+                    <div class="panel-title" style="color:var(--accent-cyan); text-align:center;">INTERCEPTOR SQUADRON</div>
+                    <div class="panel-content" style="text-align:center; padding:20px;">
+                        <span style="font-size:4rem; color:var(--accent-cyan);">🦅</span><br><br>
+                        <span style="color:#fff;">STATUS: STANDBY (3 UNITS)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- View Container: SETTINGS -->
+    <div id="view-settings" class="view-section" style="display:none; flex:1; flex-direction:column; padding:20px; background:var(--bg-main);">
+        <div class="panel" style="flex:1;">
+            <div class="panel-title" style="font-size:1.2rem;">SYSTEM SETTINGS</div>
+            <div class="panel-content" style="padding:20px; font-family:var(--font-mono); color:#fff; display:flex; flex-direction:column; gap:20px;">
+                <div><strong>UI Theme:</strong> Cyber-Tactical (Locked)</div>
+                <div><strong>Server Uplink:</strong> 127.0.0.1:5000</div>
+                <div><strong>Auto-Engagement:</strong> Disabled by default</div>
+                <button class="tac-btn" style="width:200px; margin-top:20px; border-color:var(--accent-red); color:var(--accent-red);" onclick="alert('Factory Reset Initiated...')">FACTORY RESET</button>
+            </div>
+        </div>
+    </div>
+
+</main>
+
+<!-- ── THREAT ALERT POPUP ─────────────────────────────────────────────── -->
+<div id="threat-alert-box" style="
+    display:none; position:fixed; bottom:80px; right:20px; z-index:9999;
+    background:rgba(5,12,20,0.97); border:2px solid var(--accent-red);
+    box-shadow: 0 0 30px rgba(255,23,68,0.5); border-radius:6px;
+    padding:16px 20px; max-width:360px; direction:rtl; text-align:right;
+    animation: fire-pulse 1s infinite alternate;">
+</div>
+
+<!-- ── Footer ── -->
+<footer id="footer-info">
+    <div class="fi-left">
+        <div class="f-stat"><div class="f-dot enc"></div> C2 LINK: <span id="footer-enc-status">PENDING</span></div>
+        <div class="f-stat"><div class="f-dot enc"></div> DATA LINK: ENCRYPTED</div>
+        <div class="f-stat"><div class="f-dot" id="gps-dot"></div> GPS: <span id="gps-status">LOCKED</span></div>
+    </div>
+    <div class="fi-right">
+        <span>NODE: <strong style="color:var(--accent-cyan);" id="footer-node">NODE-ALPHA</strong></span>
+        <span style="margin-left:15px;">CLASSIFICATION: UNCLASSIFIED // FOR OFFICIAL USE ONLY</span>
+        <span style="margin-left:15px;">SYSTEM ID: MCDIS-C2-2026-X</span>
+    </div>
+</footer>
+
+<!-- ════════════════════════════════════════════════════════════
+     JAVASCRIPT — Full wiring of every button and socket event
+     ════════════════════════════════════════════════════════════ -->
+<script>
+const socket = io();
+
+// ══════════════════════════════════════════════════════════════
+//  v2.0 — Advanced Engagement + ISR + Fuzzy JS
+// ══════════════════════════════════════════════════════════════
+
+// Last known target data (from vision_detection events)
+let _lastTargetData = {};
+
+// Advanced engagement — calls /api/engage_advanced
+function triggerAdvancedEngagement(weaponType, confirmMsg, requireConfirm = false) {
+    if (requireConfirm) {
+        openModal(confirmMsg, () => _doAdvancedEngage(weaponType));
+    } else {
+        _doAdvancedEngage(weaponType);
+    }
+}
+
+function _doAdvancedEngage(weaponType) {
+    const tid      = _lastTargetData.target_id   || 'T-000';
+    const speed    = parseFloat(_lastTargetData.speed)    || 80;
+    const bearing  = parseFloat(_lastTargetData.bearing)  || 45;
+    const ttype    = (_lastTargetData.category   || 'commercial').toLowerCase();
+    const dist_m   = 2000; // default 2km if no radar
+
+    // Visual feedback — set button to ACTIVE
+    const stsMap = {
+        'RF_JAMMING':         'sts-jammer',
+        'GPS_SPOOFING':       'sts-gps',
+        'ACOUSTIC_ATTACK':    'sts-acoustic',
+        'ADVERSARIAL_PATCH':  'sts-adversarial',
+        'NET_GUN':            'sts-net',
+        'HPM_MICROWAVE':      'sts-hpm',
+        'SWARM_DECOY':        'sts-swarm',
+        'DEW_LASER':          'sts-laser',
+        'INTERCEPTOR_CHAIN':  'sts-chain',
+        'CYBER_TAKEOVER':     'sts-cyber',
+        'QUANTUM_JAM':        'sts-quantum',
+        'ISR_PRECHECK':       'sts-isr',
+    };
+    const stsId = stsMap[weaponType];
+    if (stsId) {
+        const el = document.getElementById(stsId);
+        if (el) { el.textContent = 'ENGAGING'; el.className = 'sts sts-active'; }
+    }
+
+    fetch('/api/engage_advanced', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            weapon_type: weaponType,
+            target_id:   tid,
+            distance_m:  dist_m,
+            target_type: ttype,
+            speed_kmh:   speed,
+            bearing:     bearing,
+            rf_strength: 65,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const ok = data.status === 'SUCCESS' || data.overall_status === 'SUCCESS';
+        if (stsId) {
+            const el = document.getElementById(stsId);
+            if (el) {
+                el.textContent = ok ? 'SUCCESS' : 'FAILED';
+                el.className = ok ? 'sts sts-armed' : 'sts';
+                setTimeout(() => { el.textContent = 'READY'; el.className = 'sts sts-ready'; }, 4000);
+            }
+        }
+        // Log to CM panel
+        addCMLog(weaponType, ok ? 'SUCCESS' : 'FAILED', tid, data.effect || data.reason || '');
+    })
+    .catch(err => {
+        console.error('[ENGAGE]', err);
+        if (stsId) {
+            const el = document.getElementById(stsId);
+            if (el) { el.textContent = 'ERROR'; el.className = 'sts'; }
+        }
+    });
+}
+
+// ISR Pre-Check — calls /api/isr_check + /api/fuzzy_evaluate
+function runISRCheck() {
+    const speed   = parseFloat(_lastTargetData.speed)   || 80;
+    const bearing = parseFloat(_lastTargetData.bearing) || 45;
+    const ttype   = (_lastTargetData.category || 'commercial').toLowerCase();
+    const dist_km = 2.0;
+
+    // Update ISR widget
+    const isrPct  = document.getElementById('isr-pct-display');
+    const isrGo   = document.getElementById('isr-gonogo');
+    const isrRec  = document.getElementById('isr-recommended');
+    const isrAlt  = document.getElementById('isr-alternative');
+    if (isrPct)  isrPct.textContent  = '...';
+    if (isrGo)   isrGo.textContent   = 'CALCULATING';
+    if (isrRec)  isrRec.textContent  = 'ANALYZING...';
+
+    fetch('/api/isr_check', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            speed_kmh:    speed,
+            distance_km:  dist_km,
+            bearing:      bearing,
+            target_type:  ttype,
+            threat_level: 'THREAT',
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (isrPct) isrPct.textContent = (data.isr_pct || 0).toFixed(0) + '%';
+        if (isrGo) {
+            const gng = data.go_nogo || 'UNKNOWN';
+            isrGo.textContent = gng;
+            isrGo.style.color = gng === 'GO' ? '#00ff88' : gng === 'CAUTION' ? '#ffcc00' : '#ff1744';
+        }
+        if (isrRec) isrRec.textContent = data.recommended || '---';
+        if (isrAlt) isrAlt.textContent = data.alternative  || '---';
+        
+        // AI AUTO-ENGAGE EXECUTION
+        if (typeof autoEngageActive !== 'undefined' && autoEngageActive && data.go_nogo === 'GO' && data.recommended) {
+            if (!window._hasFiredForCurrentTarget) {
+                window._hasFiredForCurrentTarget = true;
+                console.log("[AI] 5-second decision reached. Auto-engaging with " + data.recommended);
+                _doAdvancedEngage(data.recommended);
+            }
+        }
+    })
+    .catch(err => {
+        if (isrPct) isrPct.textContent = 'ERR';
+        if (isrGo)  isrGo.textContent  = 'ERROR';
+    });
+
+    // Also run fuzzy evaluation
+    fetch('/api/fuzzy_evaluate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            distance:    dist_km,
+            speed:       speed,
+            altitude:    200,
+            rcs:         1.0,
+            cam_conf:    70,
+            obj_size:    50,
+            rf_strength: 60,
+            rf_risk:     50,
+            acoustic:    0,
+            movement:    60,
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        const fScore = document.getElementById('fuzzy-score-display');
+        const fLevel = document.getElementById('fuzzy-level-display');
+        if (fScore) fScore.textContent = (data.threat_score || 0).toFixed(0);
+        if (fLevel) {
+            fLevel.textContent = data.threat_level || '---';
+            const colors = {SAFE:'#00ff88',SUSPICIOUS:'#ffcc00',THREAT:'#ff6e00',CRITICAL:'#ff1744'};
+            fLevel.style.color = colors[data.threat_level] || '#fff';
+            if (fScore) fScore.style.color = colors[data.threat_level] || '#ff6e00';
+        }
+    })
+    .catch(() => {});
+}
+
+// CM Log helper
+function addCMLog(sys, status, target, detail) {
+    const tbody = document.getElementById('cm-log-body');
+    if (!tbody) return;
+    const color = status === 'SUCCESS' ? '#00e676' : status === 'ENGAGING' ? '#ffd600' : '#ff1744';
+    const row   = document.createElement('tr');
+    const now   = new Date().toLocaleTimeString('en-GB', {hour12:false});
+    row.innerHTML = `<td style="color:${color}">${sys}</td><td style="color:${color}">${status}</td><td>${target}</td><td style="color:#607d8b;font-size:0.55rem;">${detail.substring(0,40)}</td>`;
+    tbody.insertBefore(row, tbody.firstChild);
+    if (tbody.rows.length > 20) tbody.deleteRow(tbody.rows.length - 1);
+}
+
+// Socket handlers for new events
+socket.on('isr_result', (data) => {
+    const isrPct = document.getElementById('isr-pct-display');
+    const isrGo  = document.getElementById('isr-gonogo');
+    const isrRec = document.getElementById('isr-recommended');
+    const isrAlt = document.getElementById('isr-alternative');
+    if (isrPct) isrPct.textContent = (data.isr_pct || 0).toFixed(0) + '%';
+    if (isrGo)  isrGo.textContent  = data.go_nogo || '---';
+    if (isrRec) isrRec.textContent = data.recommended || '---';
+    if (isrAlt) isrAlt.textContent = data.alternative  || '---';
+});
+
+socket.on('fuzzy_result', (data) => {
+    const fScore = document.getElementById('fuzzy-score-display');
+    const fLevel = document.getElementById('fuzzy-level-display');
+    if (fScore) fScore.textContent = (data.threat_score || 0).toFixed(0);
+    if (fLevel) fLevel.textContent = data.threat_level || '---';
+});
+
+socket.on('engagement_result', (data) => {
+    addCMLog(data.weapon || '---', data.status || '---', data.target || '---', data.effect || '');
+});
+
+// Capture target data from vision feed
+let _currentTargetId = null;
+let _firstDetectionTime = 0;
+let _hasEngagedThisTarget = false;
+
+socket.on('vision_detection', (det) => {
+    _lastTargetData = det;
+    
+    // Reset trackers if it's a new target
+    if (det.target_id !== _currentTargetId) {
+        _currentTargetId = det.target_id;
+        _firstDetectionTime = Date.now();
+        _hasEngagedThisTarget = false;
+        window._hasFiredForCurrentTarget = false;
+        
+        // Initial ISR check to populate the UI immediately (0 seconds)
+        if (det.threat_level === 'CRITICAL') {
+            setTimeout(runISRCheck, 200);
+        }
+    }
+    
+    if (det.threat_level === 'CRITICAL') {
+        const elapsed = Date.now() - _firstDetectionTime;
+        
+        if (typeof autoEngageActive !== 'undefined' && autoEngageActive) {
+            // Auto Engage ON: Wait exactly 4.5 seconds to gather data, then finalize decision and execute
+            if (elapsed >= 4500 && !_hasEngagedThisTarget) {
+                _hasEngagedThisTarget = true;
+                // This final check will trigger the actual engagement
+                runISRCheck();
+            }
+        } else {
+            // Auto Engage OFF: Just update the UI every 4 seconds for manual monitoring
+            const now = Date.now();
+            if (!window._lastManualUpdate || now - window._lastManualUpdate > 4000) {
+                window._lastManualUpdate = now;
+                setTimeout(runISRCheck, 500);
+            }
+        }
+    }
+});
+
+// Keyboard shortcuts — new ones for v2.0
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey) {
+        if (e.key === 'q' || e.key === 'Q') { e.preventDefault(); triggerAdvancedEngagement('QUANTUM_JAM','Activate Quantum Jammer?'); }
+        if (e.key === 'c' || e.key === 'C') { e.preventDefault(); triggerAdvancedEngagement('CYBER_TAKEOVER','Initiate Cyber Takeover?'); }
+        if (e.key === 'i' || e.key === 'I') { e.preventDefault(); triggerAdvancedEngagement('INTERCEPTOR_CHAIN','Launch Interceptor Chain?'); }
+    }
+});
+
+
+// ── SMART AUDIO ALARM SYSTEM ───────────────────────────────────────────────────
+let _continuousAlarmCtx = null;
+let _alarmInterval = null;
+let _currentAlarmLevel = null;
+
+// Modern browsers block AudioContext until user interaction
+document.body.addEventListener('click', () => {
+    if (!_continuousAlarmCtx) _continuousAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_continuousAlarmCtx.state === 'suspended') _continuousAlarmCtx.resume();
+    
+    if (!alarmCtx) alarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (alarmCtx.state === 'suspended') alarmCtx.resume();
+}, { once: true });
+
+let _voiceInterval = null;
+let _sirenAudio = null;
+
+function startContinuousAlarm(level, targetName) {
+    if (_currentAlarmLevel === level && !targetName) return; 
+    
+    stopContinuousAlarm();
+    _currentAlarmLevel = level;
+
+    document.body.classList.add('alarm-active');
+
+    try {
+        const isCritical = (level === 'CRITICAL');
+        
+        // ── Elite Tactical Voice Alert (Radio Intercom Effect) ──
+        if (isCritical) {
+            const droneName = targetName || "";
+            // Elite Military Dispatch Phrasing
+            const alertText = `مركز القيادة والسيطرة. تنبيه! تم رصد خرق جوي عدائي في القطاع الحالي. ${droneName}. يرجى اتخاذ الإجراءات الدفاعية فوراً.`;
+            
+            const speak = () => {
+                if ('speechSynthesis' in window) {
+                    if (window.speechSynthesis.speaking) return; 
+
+                    // 1. Radio Squelch (Start)
+                    if (_continuousAlarmCtx) {
+                        const now = _continuousAlarmCtx.currentTime;
+                        const noise = _continuousAlarmCtx.createBufferSource();
+                        const buffer = _continuousAlarmCtx.createBuffer(1, _continuousAlarmCtx.sampleRate * 0.15, _continuousAlarmCtx.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                        noise.buffer = buffer;
+                        const noiseGain = _continuousAlarmCtx.createGain();
+                        noiseGain.gain.setValueAtTime(0.05, now);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                        noise.connect(noiseGain);
+                        noiseGain.connect(_continuousAlarmCtx.destination);
+                        noise.start(now);
+                    }
+
+                    if (_sirenAudio) _sirenAudio.volume = 0.15;
+
+                    const msg = new SpeechSynthesisUtterance(alertText);
+                    const voices = window.speechSynthesis.getVoices();
+                    const arVoice = voices.find(v => v.lang.includes('ar') && (v.name.includes('Natural') || v.name.includes('Microsoft') || v.name.includes('Google'))) || voices.find(v => v.lang.includes('ar'));
+                    if (arVoice) msg.voice = arVoice;
+                    
+                    msg.lang = 'ar-SA';
+                    msg.rate = 0.82; 
+                    msg.pitch = 0.9;
+                    msg.volume = 1.0;
+
+                    msg.onend = () => {
+                        if (_sirenAudio) _sirenAudio.volume = 0.8;
+                        // Radio Squelch (End)
+                        if (_continuousAlarmCtx) {
+                            const now = _continuousAlarmCtx.currentTime;
+                            const noise = _continuousAlarmCtx.createBufferSource();
+                            const buffer = _continuousAlarmCtx.createBuffer(1, _continuousAlarmCtx.sampleRate * 0.1, _continuousAlarmCtx.sampleRate);
+                            const data = buffer.getChannelData(0);
+                            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                            noise.buffer = buffer;
+                            const noiseGain = _continuousAlarmCtx.createGain();
+                            noiseGain.gain.setValueAtTime(0.03, now);
+                            noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                            noise.connect(noiseGain);
+                            noiseGain.connect(_continuousAlarmCtx.destination);
+                            noise.start(now);
+                        }
+                    };
+
+                    window.speechSynthesis.speak(msg);
+                }
+            };
+            
+            speak();
+            _voiceInterval = setInterval(speak, 1000); 
+        }
+
+        if (isCritical) {
+            // ── Professional Air Raid / Military Siren ──
+            if (!_sirenAudio) {
+                _sirenAudio = new Audio('https://www.soundboard.com/handler/DownLoadTrack.ashx?cliptoken=102377_102377_20120119124401'); // Professional Air Raid Siren
+                _sirenAudio.loop = true;
+                _sirenAudio.volume = 0.8;
+            }
+            // Fallback to Web Audio if external fails
+            _sirenAudio.onerror = () => {
+                console.warn('External siren failed, using synthesized fallback.');
+                _alarmInterval = setInterval(() => {
+                    if (!_continuousAlarmCtx) _continuousAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    const now = _continuousAlarmCtx.currentTime;
+                    const osc = _continuousAlarmCtx.createOscillator();
+                    const gain = _continuousAlarmCtx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(1000, now + 0.8);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 1.0);
+                    osc.connect(gain); gain.connect(_continuousAlarmCtx.destination);
+                    osc.start(now); osc.stop(now + 1.0);
+                }, 1100);
+            };
+            
+            _sirenAudio.play().catch(e => {
+                // Browser might block autoplay without user gesture
+                console.warn('Siren playback blocked:', e);
+            });
+        }
+    } catch(e) { console.warn('Alarm system failed:', e); }
+}
+
+function stopContinuousAlarm() {
+    document.body.classList.remove('alarm-active');
+    if (_alarmInterval) {
+        clearInterval(_alarmInterval);
+        _alarmInterval = null;
+    }
+    if (_voiceInterval) {
+        clearInterval(_voiceInterval);
+        _voiceInterval = null;
+    }
+    if (_sirenAudio) {
+        _sirenAudio.pause();
+        _sirenAudio.currentTime = 0;
+    }
+    _currentAlarmLevel = null;
+    if (typeof responsiveVoice !== 'undefined') responsiveVoice.cancel();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+function stopContinuousAlarm() {
+    document.body.classList.remove('alarm-active');
+    if (_alarmInterval) {
+        clearInterval(_alarmInterval);
+        _alarmInterval = null;
+    }
+    if (_voiceInterval) {
+        clearInterval(_voiceInterval);
+        _voiceInterval = null;
+    }
+    _currentAlarmLevel = null;
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+// ── Manual Alarm Toggle ──
+let manualAlarmActive = false;
+function toggleManualAlarm() {
+    // Resume audio contexts on user gesture
+    if (!_continuousAlarmCtx) _continuousAlarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (_continuousAlarmCtx.state === 'suspended') _continuousAlarmCtx.resume();
+    
+    const btn = document.getElementById('btn-master-alarm');
+    manualAlarmActive = !manualAlarmActive;
+    
+    if (manualAlarmActive) {
+        startContinuousAlarm('CRITICAL');
+        btn.textContent = 'MASTER ALARM: ACTIVE';
+        btn.style.background = 'rgba(255,23,68,0.3)';
+        btn.style.animation = 'fire-pulse 0.5s infinite alternate';
+        logCommand('🚨 MANUAL ALARM INITIATED BY OPERATOR', 'high');
+    } else {
+        stopContinuousAlarm();
+        btn.textContent = 'MASTER ALARM: READY';
+        btn.style.background = 'transparent';
+        btn.style.animation = 'none';
+        logCommand('🚨 MANUAL ALARM TERMINATED / SILENCED', 'normal');
+    }
+}
+
+// ── RBAC Security ────────────────────────────────────────────────────────────
+let operatorRole = null;
+let nodeId = 'NODE-ALPHA';
+
+async function attemptLogin() {
+    const user = document.getElementById('rbac-user').value.trim();
+    const pin  = document.getElementById('rbac-pin').value.trim();
+    const err  = document.getElementById('rbac-error');
+    if (!user || !pin) { err.textContent = 'ENTER CREDENTIALS'; return; }
+    err.style.color = '#00e5ff';
+    err.textContent = 'AUTHENTICATING...';
+    try {
+        const res = await fetch('/api/login', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({username: user, pin_code: pin})
+        });
+        const d = await res.json();
+        if (d.status === 'SUCCESS') {
+            operatorRole = d.role;
+            document.getElementById('rbac-overlay').style.display = 'none';
+            const rank = document.getElementById('op-rank-display');
+            if (rank) rank.textContent = operatorRole;
+            const enc = document.getElementById('footer-enc-status');
+            if (enc) enc.textContent = 'TLS 1.3 SECURE';
+        } else {
+            err.style.color = '#ff4444';
+            err.textContent = 'ACCESS DENIED';
+        }
+    } catch(e) {
+        err.style.color = '#ff4444';
+        err.textContent = 'SERVER ERROR: ' + e.message;
+    }
+}
+
+function changeNode(node) {
+    nodeId = node;
+    document.getElementById('footer-node').textContent = node;
+    logCommand(`🔀 C2 Link switched to ${node}`, 'warn');
+    // Clear radar and target info
+    radarBlips = [];
+    document.getElementById('tgt-id').textContent = '---';
+    setThreatLevel('MINIMAL');
+}
+
+function triggerOTAUpdate() {
+    logCommand('⬇️ THREAT INTEL: Downloading Zero-Day signatures from Command...', 'warn');
+    const btn = document.getElementById('btn-ota');
+    btn.textContent = 'DOWNLOADING...';
+    btn.style.color = 'var(--accent-green)';
+    btn.style.borderColor = 'var(--accent-green)';
+    
+    // Simulate OTA download sequence
+    setTimeout(() => logCommand('⬇️ THREAT INTEL: Extracting RF Profiles (Shahed-136, FPV)...', 'warn'), 2000);
+    setTimeout(() => logCommand('⬇️ THREAT INTEL: Applying Neural Weights to TrackerMIL...', 'warn'), 4000);
+    setTimeout(() => {
+        logCommand('✅ THREAT INTEL: Database Updated (v2.4.1). Zero-Day ready.', 'elevated');
+        btn.textContent = 'INTEL UPDATED';
+        setTimeout(() => {
+            btn.textContent = 'OTA UPDATE';
+            btn.style.color = 'var(--accent-amber)';
+            btn.style.borderColor = 'var(--accent-amber)';
+        }, 5000);
+    }, 6000);
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let currentThreatLevel  = 'MINIMAL';
+let activeTargets       = {};          // track_id → target data from radar_update
+let primaryTarget       = null;        // currently selected target
+let radarBlips          = [];
+let altHistory          = [];
+let simRunning          = false;       // true when sim OR real detection active
+let _visionActive       = false;       // true when real YOLO detections arriving
+let _visionTimeout      = null;        // clears visionActive after inactivity
+let pendingEngagement   = null;        // { type, msg }
+let commandCooldowns    = {};          // prevent button spam
+
+// ── UTC Clock ────────────────────────────────────────────────────────────────
+function updateClock() {
+    const now  = new Date();
+    const hh   = now.getUTCHours()  .toString().padStart(2,'0');
+    const mm   = now.getUTCMinutes().toString().padStart(2,'0');
+    const ss   = now.getUTCSeconds().toString().padStart(2,'0');
+    
+    const clk = document.getElementById('utc-clock-label');
+    if (clk) clk.textContent = `${hh}:${mm}:${ss} UTC`;
+    
+    const hudTs = document.getElementById('hud-timestamp');
+    if (hudTs) hudTs.textContent = `${hh}:${mm}:${ss} UTC`;
+    
+    const initTime = document.getElementById('init-time');
+    if (initTime) initTime.textContent = `${hh}:${mm}:${ss}`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+function formatUptime(s) {
+    const h = Math.floor(s/3600).toString().padStart(2,'0');
+    const m = Math.floor((s%3600)/60).toString().padStart(2,'0');
+    const sec = (s%60).toString().padStart(2,'0');
+    return `${h}:${m}:${sec}`;
+}
+
+// ── Threat Level UI ──────────────────────────────────────────────────────────
+const THREAT_CONFIG = {
+    MINIMAL:  { color:'var(--accent-green)',  dash:40,  label:'MINIMAL',  hdr:'MINIMAL' },
+    GUARDED:  { color:'var(--accent-cyan)',   dash:100, label:'GUARDED',  hdr:'GUARDED' },
+    ELEVATED: { color:'var(--accent-amber)',  dash:160, label:'ELEVATED', hdr:'ELEVATED' },
+    HIGH:     { color:'#ff9100',              dash:200, label:'HIGH',     hdr:'HIGH' },
+    CRITICAL: { color:'var(--accent-red)',    dash:251, label:'CRITICAL', hdr:'CRITICAL' },
+};
+
+function setThreatLevel(level) {
+    if (level === currentThreatLevel) return;
+    currentThreatLevel = level;
+    const cfg  = THREAT_CONFIG[level] || THREAT_CONFIG.MINIMAL;
+    const fill = document.getElementById('threat-dial-fill');
+    const lbl  = document.getElementById('threat-level-label');
+    const hdr  = document.getElementById('hdr-threat');
+
+    if (fill) {
+        fill.style.stroke           = cfg.color;
+        fill.style.strokeDashoffset = 251 - cfg.dash;
+    }
+    if (lbl) {
+        lbl.textContent             = cfg.label;
+        lbl.style.color             = cfg.color;
+    }
+    if (hdr) {
+        hdr.textContent             = cfg.hdr;
+        hdr.style.color             = cfg.color;
+    }
+
+    // Flash body on critical - DISABLED AUTOMATICALLY
+    /*
+    if (level === 'CRITICAL' || level === 'HIGH') {
+        document.body.classList.add('threat-active');
+    } else {
+        document.body.classList.remove('threat-active');
+    }
+    */
+}
+
+// ── Single-shot Audio Alarm (For UI feedback) ──────────────────────────────────
+let alarmCtx = null;
+function playAlarm() {
+    try {
+        if (!alarmCtx) alarmCtx = new (window.AudioContext || window.webkitAudioContext)();
+        [880, 660].forEach((freq, i) => {
+            const osc  = alarmCtx.createOscillator();
+            const gain = alarmCtx.createGain();
+            osc.connect(gain);
+            gain.connect(alarmCtx.destination);
+            osc.frequency.value = freq;
+            osc.type = 'square';
+            gain.gain.setValueAtTime(0.08, alarmCtx.currentTime + i*0.25);
+            gain.gain.exponentialRampToValueAtTime(0.001, alarmCtx.currentTime + i*0.25 + 0.2);
+            osc.start(alarmCtx.currentTime + i*0.25);
+            osc.stop(alarmCtx.currentTime + i*0.25 + 0.25);
+        });
+    } catch(e) {}
+}
+
+// ── Mission Log ──────────────────────────────────────────────────────────────
+function logCommand(msg, level='normal') {
+    const tb  = document.getElementById('mission-log-body');
+    const tr  = document.createElement('tr');
+    const now = new Date();
+    const ts  = [now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds()]
+                    .map(n => n.toString().padStart(2,'0')).join(':');
+
+    const cls = { 
+        high: 'log-row-critical', 
+        elevated: 'log-row-high', 
+        warn: 'log-row-elevated',
+        CRITICAL: 'log-row-critical' 
+    };
+    
+    if (cls[level]) tr.className = cls[level];
+    
+    // Special styling for Cyber Attacks
+    if (msg.includes("CYBER") || msg.includes("SPOOFING")) {
+        tr.style.backgroundColor = "rgba(255, 23, 68, 0.2)";
+        tr.style.fontWeight = "bold";
+        playAlarm(); // Sound alarm on cyber attack
+        document.body.classList.add('alert-critical');
+        setTimeout(() => document.body.classList.remove('alert-critical'), 1000);
+    }
+
+    tr.innerHTML = `<td>${ts}</td><td>${msg}</td>`;
+    if (tb) {
+        tb.insertBefore(tr, tb.firstChild);
+        // Keep log to last 50 entries
+        while (tb.rows.length > 50) tb.deleteRow(tb.rows.length - 1);
+    }
+}
+
+function clearLog() {
+    const tb = document.getElementById('mission-log-body');
+    tb.innerHTML = '';
+    logCommand('Log cleared by operator');
+}
+
+// ── Video Feed ────────────────────────────────────────────────────────────────
+function fetchVideoList() {
+    logCommand('Pulling video archive...');
+    fetch('/api/videos').then(r => r.json()).then(videos => {
+        const sel = document.getElementById('video-feed-select');
+        sel.innerHTML = '<option value="">-- [ SELECT TARGET FEED ] --</option>';
+        videos.forEach(v => {
+            const opt   = document.createElement('option');
+            opt.value   = v;
+            opt.textContent = v;
+            sel.appendChild(opt);
+        });
+        logCommand(`Archive loaded: ${videos.length} feed(s) available`);
+    }).catch(() => logCommand('Archive pull failed — check server', 'elevated'));
+}
+
+function changeVideoFeed() {
+    const val = document.getElementById('video-feed-select').value;
+    if (!val) return;
+    const img = document.getElementById('video-img');
+    document.getElementById('feed-status').textContent = '● LOADING';
+    document.getElementById('standby-msg').style.display = 'none';
+    img.style.display = 'block';
+
+    fetch('/api/set_video', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({filename: val})
+    }).then(r => r.json()).then(d => {
+        img.src = '/video_feed?' + Date.now();
+        document.getElementById('feed-status').textContent = '● REC';
+        logCommand(`FEED ACTIVE: ${d.file}`);
+    }).catch(() => {
+        logCommand('Feed switch failed', 'elevated');
+        document.getElementById('feed-status').textContent = '○ ERROR';
+    });
+}
+
+function videoError() {
+    document.getElementById('video-img').style.display = 'none';
+    document.getElementById('standby-msg').style.display = 'block';
+    document.getElementById('feed-status').textContent = '○ STANDBY';
+}
+
+function loadSimVideo(filename) {
+    const img = document.getElementById('video-img');
+    document.getElementById('feed-status').textContent = '● LOADING SIM...';
+    document.getElementById('standby-msg').style.display = 'none';
+    img.style.display = 'block';
+
+    fetch('/api/set_video', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({filename: filename})
+    }).then(r => r.json()).then(d => {
+        img.src = '/video_feed?' + Date.now();
+        document.getElementById('feed-status').textContent = '● SIM REC';
+        logCommand(`SIMULATION ACTIVE: ${d.file}`, 'elevated');
+    }).catch(() => {
+        logCommand('Sim switch failed', 'high');
+        document.getElementById('feed-status').textContent = '○ ERROR';
+    });
+}
+
+// ── Scenarios (Deprecated Radar Sims) ────────────────────────────────────────
+const SCENARIO_NAMES = {
+    1: 'DJI INTRUSION',
+    2: 'FPV SUICIDE ATTACK',
+    3: 'SHAHED-136 APPROACH',
+    4: 'SWARM ATTACK'
+};
+
+function startScenario(id) {
+    if (simRunning) {
+        logCommand('Scenario already running — abort first', 'elevated');
+        return;
+    }
+    simRunning = true;
+    logCommand(`▶ LAUNCHING SCENARIO [${id}]: ${SCENARIO_NAMES[id] || id}`, 'elevated');
+    setThreatLevel('ELEVATED');
+
+    fetch('/api/scenario', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({cmd:'start', scenario: id})
+    }).then(r => r.json()).then(d => {
+        logCommand(`SCENARIO STATUS: ${d.status}`);
+        // Auto-reset sim flag after scenario duration
+        setTimeout(() => { simRunning = false; }, 60000);
+    }).catch(() => {
+        logCommand('Scenario API error', 'elevated');
+        simRunning = false;
+    });
+}
+
+// ── Engagement System ────────────────────────────────────────────────────────
+function triggerEngagement(type, msg, requiresConfirm = false) {
+    // ROE: Rules of Engagement Check
+    if (primaryTarget && primaryTarget.iff_status === 'FRIENDLY') {
+        logCommand(`ROE VIOLATION: Target ${primaryTarget.id} is FRIENDLY. Engagement aborted.`, 'warn');
+        playAlarm();
+        return;
+    }
+
+    // Cooldown check (3 sec)
+    const now = Date.now();
+    if (commandCooldowns[type] && now - commandCooldowns[type] < 3000) {
+        logCommand(`${type} — cooldown active`, 'warn');
+        return;
+    }
+
+    if (requiresConfirm) {
+        pendingEngagement = {type, msg};
+        document.getElementById('modal-title').textContent =
+            type === 'MISSILE' ? '⚠ KINETIC ENGAGEMENT AUTHORIZATION' : '⚠ ENGAGEMENT AUTHORIZATION';
+        document.getElementById('modal-msg').textContent = msg;
+        document.getElementById('confirm-modal').classList.add('show');
+        return;
+    }
+
+    executeEngagement(type);
+}
+
+// ── Engagement Actions Map (GLOBAL — accessible from all handlers) ────
+const ENGAGEMENT_ACTIONS = {
+    'INTERCEPT_DRONE': () => {
+        logCommand('🛸 INTERCEPTOR SQUADRON LAUNCHED (Deep RL Guided)', 'high');
+        setEngStatus('sts-interceptor', 'DEPLOYED', 'sts-active');
+    },
+    'RF_JAMMING': () => {
+        logCommand('📶 BROADBAND RF JAMMER ACTIVE (2.4/5.8GHz + 900MHz)', 'elevated');
+        setEngStatus('sts-jammer', 'ACTIVE', 'sts-active');
+        setTimeout(() => setEngStatus('sts-jammer', 'READY', 'sts-ready'), 8000);
+    },
+    'GPS_SPOOFING': () => {
+        logCommand('🌍 GNSS DENIAL & GPS SPOOFING ACTIVE', 'elevated');
+        setEngStatus('sts-gps', 'ACTIVE', 'sts-active');
+        setTimeout(() => setEngStatus('sts-gps', 'READY', 'sts-ready'), 8000);
+    },
+    'NET_GUN': () => {
+        logCommand('🕸️ INTERCEPTOR NET-GUN DEPLOYED', 'high');
+        setEngStatus('sts-net', 'DEPLOYED', 'sts-active');
+        setTimeout(() => setEngStatus('sts-net', 'RELOADING', 'sts-ready'), 10000);
+    },
+    'DEW_LASER': () => {
+        logCommand('⚡ HIGH-ENERGY DEW LASER FIRING (HARD KILL)', 'high');
+        setEngStatus('sts-dew', 'FIRING', 'sts-active');
+        document.body.classList.add('effect-laser');
+        setTimeout(() => { document.body.classList.remove('effect-laser'); setEngStatus('sts-dew', 'COOLING', 'sts-ready'); }, 2000);
+    },
+    'HPM_MICROWAVE': () => {
+        logCommand('☢️ HIGH-POWER MICROWAVE (EMP) DETONATED', 'high');
+        setEngStatus('sts-hpm', 'DISCHARGED', 'sts-active');
+        document.body.classList.add('effect-emp');
+        setTimeout(() => { document.body.classList.remove('effect-emp'); setEngStatus('sts-hpm', 'RECHARGING', 'sts-ready'); }, 3000);
+    },
+    'ACOUSTIC_ATTACK': () => {
+        logCommand('🔊 UNROCKER ACOUSTIC INJECTION ACTIVE (MEMS Jitter)', 'elevated');
+        setEngStatus('sts-acoustic', 'ACTIVE', 'sts-active');
+        document.body.classList.add('effect-acoustic');
+        setTimeout(() => { setEngStatus('sts-acoustic', 'READY', 'sts-ready'); document.body.classList.remove('effect-acoustic'); }, 5000);
+    },
+    'ADVERSARIAL_PATCH': () => {
+        logCommand('👁️‍🗨️ ADVERSARIAL PATTERN PROJECTED (AI Blinding)', 'elevated');
+        setEngStatus('sts-adversarial', 'ACTIVE', 'sts-active');
+        document.body.classList.add('effect-glitch');
+        setTimeout(() => { setEngStatus('sts-adversarial', 'READY', 'sts-ready'); document.body.classList.remove('effect-glitch'); }, 5000);
+    },
+    'SWARM_DECOY': () => {
+        logCommand('🐝 COLLABORATIVE MESH SWARM DEPLOYED', 'high');
+        setEngStatus('sts-swarm', 'ACTIVE', 'sts-active');
+        setTimeout(() => setEngStatus('sts-swarm', 'READY', 'sts-ready'), 15000);
+    }
+};
+
+function executeEngagement(type, human_confirmed = false) {
+    commandCooldowns[type] = Date.now();
+    socket.emit('trigger_engagement', {
+        mode: type, 
+        target: primaryTarget?.id || 'ALL',
+        human_confirmed: human_confirmed
+    });
+    if (ENGAGEMENT_ACTIONS[type]) ENGAGEMENT_ACTIONS[type]();
+    else logCommand(`Executed command: ${type}`, 'elevated');
+}
+
+let autoEngageActive = false;
+function toggleAutoEngage() {
+    autoEngageActive = !autoEngageActive;
+    socket.emit('ai_auto_engage', {enabled: autoEngageActive});
+    const btn = document.getElementById('auto-engage-btn');
+    if (autoEngageActive) {
+        btn.textContent = '« AI AUTO-ENGAGE: ACTIVE »';
+        btn.style.background = 'rgba(255,23,68,0.2)';
+        btn.style.borderColor = 'var(--accent-red)';
+        btn.style.color = 'var(--accent-red)';
+        btn.style.animation = 'fire-pulse 1s infinite alternate';
+        logCommand('🧠 AI DECISION ENGINE AUTHORIZED FOR KINETIC ENGAGEMENT', 'high');
+    } else {
+        btn.textContent = '« AI AUTO-ENGAGE: OFF »';
+        btn.style.background = 'var(--accent-cyan)';
+        btn.style.borderColor = 'var(--accent-cyan)';
+        btn.style.color = '#000';
+        btn.style.animation = 'none';
+        btn.style.boxShadow = 'none';
+        logCommand('🧠 AI DECISION ENGINE RETURNED TO STANDBY', 'normal');
+    }
+}
+
+function setEngStatus(id, text, cls) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'sts ' + cls;
+    el.textContent = text;
+}
+
+// Confirm modal
+document.getElementById('modal-confirm-btn').addEventListener('click', () => {
+    closeModal();
+    if (pendingEngagement) {
+        // Pass human_confirmed = true because it came from the ROE Modal
+        executeEngagement(pendingEngagement.type, true);
+        pendingEngagement = null;
+    }
+});
+function closeModal() {
+    document.getElementById('confirm-modal').classList.remove('show');
+    pendingEngagement = null;
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey && e.key === 'j') { e.preventDefault(); triggerEngagement('RF_JAMMING',   'Activate RF jamming?'); }
+    if (e.ctrlKey && e.key === 't') { e.preventDefault(); triggerEngagement('NET_LAUNCHER', 'Deploy net launcher?'); }
+    if (e.ctrlKey && e.key === 'i') { e.preventDefault(); triggerEngagement('INTERCEPTOR',  'Deploy interceptor?'); }
+    if (e.key === 'Escape')         closeModal();
+});
+
+// ── Sidebar navigation ────────────────────────────────────────────────────────
+function sideNav(el, section) {
+    document.querySelectorAll('.side-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+    
+    // Hide all views
+    document.querySelectorAll('.view-section').forEach(v => {
+        v.classList.remove('active');
+        v.style.display = 'none';
+    });
+    
+    // Show target section
+    const targetView = document.getElementById('view-' + section);
+    if (targetView) {
+        targetView.classList.add('active');
+        // If dashboard, use contents; otherwise flex/block
+        if (section === 'dashboard') {
+            targetView.style.display = 'contents';
+        } else {
+            targetView.style.display = 'flex';
+        }
+    }
+    
+    // Initialize 3D Map if maps section selected
+    if (section === 'maps') {
+        if (typeof initTactical3D === 'function') {
+            setTimeout(initTactical3D, 100);
+        }
+    }
+    
+    logCommand(`NAV → ${section.toUpperCase()}`);
+}
+
+
+// ── Socket Events ─────────────────────────────────────────────────────────────
+socket.on('connect', () => {
+    logCommand('✓ C2 WebSocket connected');
+    document.getElementById('hdr-status').textContent = 'OPERATIONAL';
+    document.getElementById('hdr-status').style.color = 'var(--accent-green)';
+    
+    // AUTO-START DETECTION VIDEO
+    setTimeout(() => {
+        logCommand('🚀 AUTO-INITIATING VISION PIPELINE...', 'elevated');
+        loadSimVideo('video_2026-04-25_09-13-07.mp4');
+    }, 1500);
+});
+
+socket.on('disconnect', () => {
+    logCommand('✗ C2 link lost — reconnecting...', 'high');
+    document.getElementById('hdr-status').textContent = 'OFFLINE';
+});
+
+socket.on('system_heartbeat', data => {
+    if (data.uptime !== undefined)
+        document.getElementById('uptime-value').textContent = formatUptime(data.uptime);
+    if (data.stats)
+    if (data.stats) {
+        const total = data.stats.total || 0;
+        document.getElementById('hdr-detections').textContent = total;
+        if (typeof bumpDetectionCounter === 'function') bumpDetectionCounter(total);
+        
+        // Phase 4 KPIs update
+        const hfp = document.getElementById('hdr-fp');
+        const hresp = document.getElementById('hdr-resp');
+        const hmtbf = document.getElementById('hdr-mtbf');
+        
+        if (hfp && data.stats.false_positive_rate !== undefined) {
+            hfp.textContent = data.stats.false_positive_rate + "%";
+            hfp.style.color = data.stats.false_positive_rate > 5 ? "var(--accent-amber)" : "#b0bec5";
+        }
+        if (hresp && data.stats.response_time_sec !== undefined) {
+            hresp.textContent = data.stats.response_time_sec > 0 ? data.stats.response_time_sec + " s" : "-- s";
+        }
+        if (hmtbf && data.stats.mtbf_hours !== undefined) {
+            hmtbf.textContent = data.stats.mtbf_hours + "h";
+        }
+    }
+    if (data.threat_level) {
+        const lvl = data.threat_level.level || data.threat_level;
+        setThreatLevel(lvl);
+    }
+});
+
+socket.on('new_alert_data', data => {
+    if (data.uptime !== undefined)
+        document.getElementById('uptime-value').textContent = formatUptime(data.uptime);
+    if (data.stats) {
+        const total2 = data.stats.total || 0;
+        document.getElementById('hdr-detections').textContent = total2;
+        if (typeof bumpDetectionCounter === 'function') bumpDetectionCounter(total2);
+        
+        // Phase 4 KPIs update
+        const hfp = document.getElementById('hdr-fp');
+        const hresp = document.getElementById('hdr-resp');
+        const hmtbf = document.getElementById('hdr-mtbf');
+        
+        if (hfp && data.stats.false_positive_rate !== undefined) {
+            hfp.textContent = data.stats.false_positive_rate + "%";
+            hfp.style.color = data.stats.false_positive_rate > 5 ? "var(--accent-amber)" : "#b0bec5";
+        }
+        if (hresp && data.stats.response_time_sec !== undefined) {
+            hresp.textContent = data.stats.response_time_sec > 0 ? data.stats.response_time_sec + " s" : "-- s";
+        }
+        if (hmtbf && data.stats.mtbf_hours !== undefined) {
+            hmtbf.textContent = data.stats.mtbf_hours + "h";
+        }
+    }
+    if (data.threat_level) {
+        const lvl = typeof data.threat_level === 'string'
+                    ? data.threat_level
+                    : (data.threat_level.level || 'MINIMAL');
+        setThreatLevel(lvl);
+    }
+    if (data.alerts && data.alerts.length > 0) {
+        const a = data.alerts[0];
+        const thr = (a.threat_level || 'normal').toLowerCase();
+        const lvl = thr === 'critical' ? 'high' : thr === 'high' ? 'elevated' : 'normal';
+        logCommand(`DETECT: ${a.target_id} [${a.sensor_type}] conf:${a.confidence}%`, lvl);
+        // updateTargetInfo(a);
+    }
+});
+
+socket.on('vision_detection', data => {
+    try {
+        window._visionLastUpdate = Date.now();
+        // Mark real detection as active (for acoustic waveform etc.)
+        _visionActive = true;
+        simRunning    = true;
+        if (_visionTimeout) clearTimeout(_visionTimeout);
+        _visionTimeout = setTimeout(() => { 
+            _visionActive = false; 
+            simRunning = false;
+            // Deactivate sensor indicators
+            document.querySelectorAll('.mini-sensor').forEach(s => s.classList.remove('sensor-active'));
+        }, 3000);
+
+    // Activate sensor indicators
+    document.querySelectorAll('.mini-sensor').forEach(s => s.classList.add('sensor-active'));
+
+    // Store raw_class for threat alert recommendations
+    window._lastRawClass = data.raw_class || 'generic_commercial';
+
+    // ── PERSISTENT ADAPTIVE ALARM ──
+    // Manual only per user request
+    /*
+    if (data.threat_level === 'CRITICAL') {
+        startContinuousAlarm('CRITICAL', data.model_name);
+    } else if (data.threat_level === 'HIGH') {
+        startContinuousAlarm('HIGH', data.model_name);
+    }
+    */
+
+    // 1. Update right column info
+    // (updateTargetInfo removed to fix ReferenceError)
+
+    const setT = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+    
+    setT('tgt-model', data.model_name || 'UNKNOWN');
+    setT('tgt-type',  data.class_type || 'UNKNOWN');
+    setT('tgt-class', data.category   || 'UNKNOWN');
+    setT('tgt-speed', (data.speed || 0) + ' km/h');
+    setT('tgt-bearing', (data.bearing || 0) + '°');
+    setT('tgt-iff',   data.iff_status || 'UNKNOWN');
+
+    // Explicit color-code BIRD vs DRONE
+    const classEl = document.getElementById('tgt-class');
+    if (data.category === 'BIRD') {
+        classEl.style.color      = 'var(--accent-green)';
+        classEl.style.textShadow = '0 0 5px var(--accent-green)';
+        document.getElementById('tgt-drone-svg').style.stroke = 'var(--accent-green)';
+    } else {
+        classEl.style.color      = 'var(--accent-red)';
+        classEl.style.textShadow = '0 0 5px var(--accent-red)';
+        document.getElementById('tgt-drone-svg').style.stroke = 'var(--accent-red)';
+    }
+
+    const iffEl = document.getElementById('tgt-iff');
+    if (iffEl) {
+        iffEl.textContent  = data.iff_status;
+        iffEl.style.color  =
+            data.iff_status === 'FRIENDLY' ? 'var(--accent-green)' :
+            data.iff_status === 'HOSTILE'  ? 'var(--accent-red)' : 'var(--accent-amber)';
+    }
+
+    // Compass, Trajectory & Speed
+    if (data.bearing !== undefined) {
+        setT('tgt-bearing', data.bearing + '°');
+        const compass = document.getElementById('compass-needle');
+        if (compass) compass.style.transform = `translate(-50%,-100%) rotate(${data.bearing}deg)`;
+        const az = document.getElementById('compass-az');
+        if (az) az.textContent = data.bearing + '°';
+    }
+    
+    if (data.speed !== undefined) {
+        setT('tgt-speed', data.speed + ' km/h');
+    }
+
+    // Log new detection in mission log
+    const logLvl = data.category === 'DRONE' ? 'high' : 'elevated';
+    logCommand(`🔍 VISION: ${data.target_id} — ${data.model_name} | ${data.category} | CONF:${data.confidence}% | BRG:${data.bearing}°`, logLvl);
+
+    // Update live target image in the schematic area
+    if (data.crop_b64) {
+        const liveImg = document.getElementById('tgt-live-img');
+        const svgWrap = document.getElementById('tgt-drone-svg-wrap');
+        const scanLine = document.getElementById('tgt-scan-line');
+        const iffBadge = document.getElementById('tgt-iff-badge');
+        const confOverlay = document.getElementById('tgt-conf-overlay');
+
+        liveImg.src = 'data:image/jpeg;base64,' + data.crop_b64;
+        liveImg.classList.add('visible');
+        svgWrap.classList.add('hidden');
+        
+        // Trigger scan line animation
+        scanLine.classList.remove('active');
+        void scanLine.offsetWidth; // trigger reflow
+        scanLine.classList.add('active');
+
+        // Update overlays
+        iffBadge.textContent = data.iff_status;
+        iffBadge.style.color = data.iff_status === 'FRIENDLY' ? 'var(--accent-green)' : (data.iff_status === 'HOSTILE' ? 'var(--accent-red)' : 'var(--accent-amber)');
+        iffBadge.style.borderColor = iffBadge.style.color;
+        iffBadge.classList.add('visible');
+
+        confOverlay.textContent = `CONF: ${data.confidence}%`;
+        confOverlay.classList.add('visible');
+
+        // ── VOICE ALERT ──
+        if (data.category === 'DRONE' && (data.threat_level === 'CRITICAL' || data.threat_level === 'HIGH')) {
+            if (!window._lastVoiceAlert || Date.now() - window._lastVoiceAlert > 10000) {
+                const msg = new SpeechSynthesisUtterance("Hostile drone detected. Threat level " + data.threat_level);
+                msg.rate = 0.9;
+                msg.pitch = 0.8;
+                window.speechSynthesis.speak(msg);
+                window._lastVoiceAlert = Date.now();
+            }
+        }
+    }
+
+    // 2. Add image to gallery if available
+    // 2. Add image to gallery if available — CINEMATIC REVEAL
+    if (data.crop_b64) {
+        const gallery  = document.getElementById('target-gallery');
+        if (!gallery) return; // Silent return if gallery not in DOM
+
+        const existing = document.getElementById('gal-' + data.target_id);
+        if (!existing) {
+            const item = document.createElement('div');
+            item.id    = 'gal-' + data.target_id;
+            const threatClass = data.category === 'BIRD' ? 'threat-BIRD' : (data.threat_level === 'CRITICAL' ? 'threat-CRITICAL' : '');
+            
+            // Initial AI ENHANCING state (Cinematic)
+            item.className = 'gallery-item ' + threatClass;
+            item.style.cssText = 'position:relative; width:120px; height:120px; flex-shrink:0; overflow:hidden; background:#000; border:1px solid var(--accent-cyan); box-shadow:0 0 10px rgba(0,229,255,0.2); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);';
+            
+            // Cyber Grid Background
+            const gridBg = document.createElement('div');
+            gridBg.style.cssText = 'position:absolute; inset:0; background-image: linear-gradient(rgba(0,229,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.1) 1px, transparent 1px); background-size: 10px 10px; opacity:0.5;';
+            item.appendChild(gridBg);
+
+            // Scanning Laser
+            const laser = document.createElement('div');
+            laser.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:2px; background:#00e5ff; box-shadow:0 0 8px #00e5ff, 0 0 15px #00e5ff; animation: scanLaser 1s ease-in-out infinite alternate;';
+            item.appendChild(laser);
+
+            const aiText = document.createElement('div');
+            aiText.style.cssText = 'position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--accent-cyan); text-align:center; z-index:2; text-shadow:0 0 5px var(--accent-cyan); animation: glitchText 0.3s infinite;';
+            aiText.innerHTML = 'AI ENHANCING...<br><span style="font-size:0.5rem; letter-spacing:2px; color:#fff;">RECONSTRUCTING</span>';
+            item.appendChild(aiText);
+            
+            gallery.insertBefore(item, gallery.firstChild);
+            if (gallery.children.length > 8) gallery.removeChild(gallery.lastChild);
+
+            // Add dynamic keyframes if not exists
+            if (!document.getElementById('cinematic-keyframes')) {
+                const style = document.createElement('style');
+                style.id = 'cinematic-keyframes';
+                style.innerHTML = `
+                    @keyframes scanLaser { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0.5; } }
+                    @keyframes imgReveal { 0% { filter: brightness(3) contrast(2) hue-rotate(90deg); transform: scale(1.2); opacity: 0; } 100% { filter: brightness(1) contrast(1.2) hue-rotate(0deg); transform: scale(1); opacity: 1; } }
+                    @keyframes glitchText { 0% { transform: translate(0); } 20% { transform: translate(-1px, 1px); } 40% { transform: translate(-1px, -1px); } 60% { transform: translate(1px, 1px); } 80% { transform: translate(1px, -1px); } 100% { transform: translate(0); } }
+                `;
+                document.head.appendChild(style);
+            }
+
+            // Reveal Image
+            setTimeout(() => {
+                item.innerHTML = ''; // Clear loading state
+                item.style.border = data.threat_level === 'CRITICAL' ? '1px solid var(--accent-red)' : '1px solid var(--border-bright)';
+                item.style.boxShadow = data.threat_level === 'CRITICAL' ? '0 0 15px var(--accent-red-glow)' : 'none';
+
+                const img = document.createElement('img');
+                img.src = 'data:image/jpeg;base64,' + data.crop_b64;
+                img.style.cssText = 'width:100%; height:100%; object-fit:cover; animation: imgReveal 0.6s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; filter: grayscale(20%) contrast(1.2);';
+
+                // CRT Overlay on Image
+                const crtOverlay = document.createElement('div');
+                crtOverlay.style.cssText = 'position:absolute; inset:0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 2px, 3px 100%; pointer-events:none; z-index:1;';
+
+                // Corner Brackets
+                const brackets = document.createElement('div');
+                const bColor = data.threat_level === 'CRITICAL' ? '#ff1744' : '#00e5ff';
+                brackets.style.cssText = `position:absolute; inset:4px; border: 1px solid ${bColor}; opacity:0.6; z-index:2; clip-path: polygon(0 0, 15px 0, 15px 1px, 1px 1px, 1px 15px, 0 15px, 0 calc(100% - 15px), 1px calc(100% - 15px), 1px calc(100% - 1px), 15px calc(100% - 1px), 15px 100%, 0 100%, calc(100% - 15px) 100%, calc(100% - 15px) calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) calc(100% - 15px), 100% calc(100% - 15px), 100% 100%, 100% 15px, calc(100% - 1px) 15px, calc(100% - 1px) 1px, calc(100% - 15px) 1px, calc(100% - 15px) 0, 100% 0);`;
+
+                // REC blinker
+                const recBadge = document.createElement('div');
+                recBadge.style.cssText = 'position:absolute; top:6px; right:6px; width:5px; height:5px; border-radius:50%; background:#ff1744; box-shadow:0 0 6px #ff1744; animation:blink 1s step-start infinite; z-index:3;';
+
+                // Target Data Box
+                const label = document.createElement('div');
+                label.style.cssText = 'position:absolute; bottom:0; left:0; width:100%; padding:4px; background:rgba(0,0,0,0.85); backdrop-filter:blur(2px); border-top:1px solid var(--border-dim); font-family:var(--font-mono); z-index:3; display:flex; flex-direction:column; justify-content:center; align-items:center; line-height:1.2;';
+                
+                const tColor = data.threat_level === 'CRITICAL' ? 'var(--accent-red)' : 'var(--accent-cyan)';
+                label.innerHTML = `
+                    <div style="font-size:0.55rem; color:${tColor}; letter-spacing:1px; font-weight:bold;">${data.target_id}</div>
+                    <div style="color:#fff; font-size:0.6rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:95%;">${(data.model_name || 'UNKNOWN').toUpperCase()}</div>
+                    <div style="font-size:0.5rem; color:var(--text-dim); margin-top:2px;">MATCH: <span style="color:#fff">${data.confidence}%</span></div>
+
+                `;
+
+                item.appendChild(img);
+                item.appendChild(crtOverlay);
+                item.appendChild(brackets);
+                item.appendChild(recBadge);
+                item.appendChild(label);
+            }, 1200);
+        }
+    }
+    } catch(err) {
+        if(document.getElementById('tgt-model')) {
+            document.getElementById('tgt-model').textContent = "ERR: " + err.message;
+            document.getElementById('tgt-model').style.color = "red";
+        }
+    }
+});
+
+socket.on('auto_engagement_fired', data => {
+    logCommand(`[AI ENGINE] AUTO-ENGAGE: ${data.weapon} → ${data.target_id} (${data.model_name})`, 'high');
+    playAlarm();
+    if (ENGAGEMENT_ACTIONS[data.weapon]) ENGAGEMENT_ACTIONS[data.weapon]();
+    else logCommand(`AI fired: ${data.weapon}`, 'elevated');
+});
+
+// ── LIVE COUNTERMEASURE STATUS PANEL ─────────────────────────────────────────
+socket.on('countermeasure_status', data => {
+    const tbody = document.getElementById('cm-log-body');
+    if (!tbody) return;
+
+    const STATUS_COLORS = {
+        'STANDBY':   'var(--text-dim)',
+        'TARGETING': 'var(--accent-amber)',
+        'INJECTING': 'var(--accent-red)',
+        'LAUNCHING': 'var(--accent-amber)',
+        'PURSUIT':   'var(--accent-red)',
+        'TERMINAL_ENGAGEMENT': 'var(--accent-red)',
+        'RETURNING': 'var(--accent-green)',
+        'HOSTILE':   'var(--accent-red)',
+        'FRIENDLY':  'var(--accent-green)',
+    };
+    const color = STATUS_COLORS[data.status] || 'var(--accent-cyan)';
+
+    const SYS_ICONS = {
+        'ACOUSTIC_WEAPON':  '🔊',
+        'INTERCEPTOR_DRONE':'🛸',
+        'IFF_SYSTEM':       '📡',
+        'SWARM_DECOY':      '🐝',
+        'ADVERSARIAL':      '👁️',
+    };
+    const icon = SYS_ICONS[data.system] || '⚙️';
+
+    // Update existing row or create new one
+    let row = document.getElementById('cm-' + data.system);
+    if (!row) {
+        row = document.createElement('tr');
+        row.id = 'cm-' + data.system;
+        tbody.insertBefore(row, tbody.firstChild);
+    }
+    row.innerHTML = `
+        <td style="color:var(--accent-cyan);white-space:nowrap;">${icon} ${data.system.replace('_',' ')}</td>
+        <td><strong style="color:${color};">${data.status}</strong></td>
+        <td style="color:var(--accent-amber);">${data.target || '--'}</td>
+        <td style="color:var(--text-muted);font-size:0.6rem;">${data.detail || ''}</td>`;
+
+    // Show browser alert popup for critical events
+    showThreatAlert(data);
+
+    // Log to mission log too
+    logCommand(`[CM] ${icon} ${data.system}: ${data.status} → ${data.target}`, 
+        data.status === 'INJECTING' || data.status === 'PURSUIT' ? 'high' : 'elevated');
+});
+
+// ── SMART THREAT ALERT POPUP ─────────────────────────────────────────────────
+const THREAT_RECOMMENDATIONS = {
+    'fpv_suicide':          { level: 'CRITICAL 🔴', action: 'استخدم السلاح الصوتي فوراً (ACOUSTIC) لتعطيل الـ IMU — التشويش لا يعمل معها!', weapon: 'ACOUSTIC_ATTACK' },
+    'shahed_136':           { level: 'CRITICAL 🔴', action: 'أطلق صاروخاً أو درون اعتراضية (INTERCEPTOR) فوراً — مدى بعيد يستدعي Hard Kill!', weapon: 'INTERCEPT_DRONE' },
+    'swarm_unit':           { level: 'HIGH 🟠',     action: 'فعّل سرب الخداع البيولوجي (SWARM DECOY) لإرباك الذكاء الاصطناعي للعدو.', weapon: 'SWARM_DECOY' },
+    'military_fixed_wing':  { level: 'HIGH 🟠',     action: 'شوّش على نظام التحكم (RF JAMMING) ثم أطلق اعتراضية (INTERCEPTOR).', weapon: 'RF_JAMMING' },
+    'dji_large':            { level: 'MEDIUM 🟡',   action: 'فعّل تشويش GPS (GPS SPOOFING) لسحب السيطرة — الهدف قابل للاستيلاء.', weapon: 'GPS_SPOOFING' },
+    'dji_mini':             { level: 'MEDIUM 🟡',   action: 'شوّش على إشارة التحكم (RF JAMMING 2.4GHz) لإسقاطها.', weapon: 'RF_JAMMING' },
+    'generic_commercial':   { level: 'LOW 🟢',      action: 'راقب الهدف. فعّل تشويش RF احتياطياً.', weapon: 'RF_JAMMING' },
+    'wing_loong':           { level: 'CRITICAL 🔴', action: 'Wing Loong — طائرة عسكرية مسلحة! أطلق اعتراضية Hard Kill فوراً!', weapon: 'INTERCEPT_DRONE' },
+};
+
+let _alertTimeout = null;
+function showThreatAlert(data) {
+    // Only show for first detection or critical status change
+    if (data.system !== 'IFF_SYSTEM' || data.status !== 'HOSTILE') return;
+
+    const box = document.getElementById('threat-alert-box');
+    if (!box) return;
+
+    // Detect raw_class from vision_detection last data
+    const cls = window._lastRawClass || 'generic_commercial';
+    const rec = THREAT_RECOMMENDATIONS[cls] || THREAT_RECOMMENDATIONS['generic_commercial'];
+
+    box.style.display = 'block';
+    box.innerHTML = `
+        <div style="color:var(--accent-red);font-size:0.8rem;font-weight:bold;letter-spacing:1px;">⚠ تهديد جديد — ${data.target}</div>
+        <div style="color:var(--accent-amber);font-size:0.65rem;margin:4px 0;">مستوى الخطورة: <strong>${rec.level}</strong></div>
+        <div style="color:var(--text-bright);font-size:0.65rem;">الإجراء المقترح: ${rec.action}</div>
+        <button onclick="executeEngagement('${rec.weapon}'); document.getElementById('threat-alert-box').style.display='none';"
+                style="margin-top:8px;padding:4px 14px;background:var(--accent-red);color:#fff;border:none;font-family:var(--font-mono);font-size:0.65rem;cursor:pointer;border-radius:3px;">
+            تنفيذ الأمر الآن ✓
+        </button>
+        <button onclick="document.getElementById('threat-alert-box').style.display='none';"
+                style="margin-top:8px;margin-right:6px;padding:4px 14px;background:transparent;color:var(--text-dim);border:1px solid var(--border-dim);font-family:var(--font-mono);font-size:0.65rem;cursor:pointer;border-radius:3px;">
+            تجاهل
+        </button>`;
+
+    if (_alertTimeout) clearTimeout(_alertTimeout);
+    _alertTimeout = setTimeout(() => { box.style.display = 'none'; }, 20000);
+}
+
+// Track last raw class for recommendations
+socket.on('vision_detection', function(data) {
+    if (data.raw_class) window._lastRawClass = data.raw_class;
+}, true);
+
+socket.on('command_acknowledged', data => {
+    logCommand(`✓ CMD ACK: ${data.command} → ${data.status} | Details: ${data.details || ''}`, data.status === 'SUCCESS' || data.status === 'AUTHORIZED' ? 'elevated' : 'warn');
+});
+
+socket.on('new_command_data', data => {
+    if (data.commands && data.commands.length > 0) {
+        const cmd = data.commands[0];
+        logCommand(`[C2 ENGINE] ${cmd.command_type} → ${cmd.target} (${cmd.status})`, 'high');
+    }
+});
+
+// ── IFF Registration API ──────────────────────────────────────────────────
+async function registerIFFUnit() {
+    const entity = document.getElementById('iff-entity').value;
+    const mac = document.getElementById('iff-mac').value;
+    const statusDiv = document.getElementById('iff-reg-status');
+    
+    if (!entity || !mac) {
+        statusDiv.style.color = "var(--accent-amber)";
+        statusDiv.textContent = "Error: Please provide Entity Name and MAC/RF Sig.";
+        return;
+    }
+    
+    statusDiv.style.color = "var(--accent-cyan)";
+    statusDiv.textContent = "Registering with HQ...";
+    
+    try {
+        const response = await fetch('/api/iff/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                entity_name: entity,
+                mac_address: mac,
+                rf_signature: mac
+            })
+        });
+        const data = await response.json();
+        
+        if (data.status === "success") {
+            statusDiv.style.color = "var(--accent-green)";
+            statusDiv.textContent = "Success: " + entity + " added to Whitelist.";
+            document.getElementById('iff-entity').value = '';
+            document.getElementById('iff-mac').value = '';
+        } else {
+            statusDiv.style.color = "var(--accent-red)";
+            statusDiv.textContent = "Failed: " + data.message;
+        }
+    } catch (e) {
+        statusDiv.style.color = "var(--accent-red)";
+        statusDiv.textContent = "Network Error.";
+    }
+}
+
+// ── Generic System Events ────────────────────────────────────────────────────
+socket.on('system_event', (data) => {
+    logCommand(`SYS_EVENT: ${data.message}`, data.level || 'elevated');
+});
+
+socket.on('new_command_data_legacy', data => {
+    if (data.commands && data.commands.length > 0) {
+        const cmd = data.commands[0];
+        logCommand(`[AI ENGINE] ${cmd.command_type} → ${cmd.target} (${cmd.status})`, 'high');
+        
+        // Auto update UI status if the engine fired it
+        if (cmd.command_type === 'INTERCEPT_DRONE') setEngStatus('sts-interceptor', 'DEPLOYED', 'sts-active');
+        if (cmd.command_type === 'ACOUSTIC_ATTACK') {
+            setEngStatus('sts-acoustic', 'ACTIVE', 'sts-active');
+            document.body.classList.add('effect-acoustic');
+            setTimeout(() => { document.body.classList.remove('effect-acoustic'); setEngStatus('sts-acoustic', 'READY', 'sts-ready'); }, 5000);
+        }
+        if (cmd.command_type === 'ADVERSARIAL_PATCH') {
+            setEngStatus('sts-adversarial', 'ACTIVE', 'sts-active');
+            document.body.classList.add('effect-glitch');
+            setTimeout(() => { document.body.classList.remove('effect-glitch'); setEngStatus('sts-adversarial', 'READY', 'sts-ready'); }, 5000);
+        }
+        if (cmd.command_type === 'SWARM_DECOY') setEngStatus('sts-swarm', 'ACTIVE', 'sts-active');
+    }
+});
+
+socket.on('radar_update', data => {
+    radarBlips = data.blips || [];
+    
+    // Feed 3D Tactical Map
+    if (radarBlips.length > 0 && typeof updateTarget === 'function') {
+        radarBlips.forEach(b => {
+            // Coordinate conversion: Sensor Data -> 3D UI
+            // Simple mapping: Range + Azimuth to X/Z
+            const x = b.range_m * Math.cos(b.azimuth_rad || 0);
+            const z = b.range_m * Math.sin(b.azimuth_rad || 0);
+            updateTarget(b.id, x, z, 50.0, b.threat_level);
+        });
+    }
+
+    if (radarBlips.length > 0) {
+        // Update primary target from highest priority blip
+        const top = radarBlips.reduce((a, b) =>
+            (b.threat_level === 'CRITICAL' ? 1 : 0) > (a.threat_level === 'CRITICAL' ? 1 : 0) ? b : a
+        , radarBlips[0]);
+        primaryTarget = top;
+        updateTargetFromBlip(top);
+    }
+});
+
+socket.on('roe_status', data => {
+    if (data.allowed_to_fire === false) {
+        logCommand(`ROE WARNING: ${data.reason}`, 'high');
+        const hdrThreat = document.getElementById('hdr-threat');
+        if (hdrThreat) {
+            hdrThreat.textContent = "RESTRICTED";
+            hdrThreat.style.color = "var(--accent-red)";
+        }
+    } else {
+        const hdrThreat = document.getElementById('hdr-threat');
+        if (hdrThreat) {
+            hdrThreat.textContent = "CLEAR";
+            hdrThreat.style.color = "var(--accent-green)";
+        }
+    }
+});
+
+socket.on('acoustic_alert', data => {
+    logCommand(`ACOUSTIC DETECT: ${data.target_id} @ ${data.node_id} [${data.signal_strength_db}dB]`, 'elevated');
+});
+
+
+// ── Target Info Update ────────────────────────────────────────────────────────
+function updateTargetInfo(alert) {
+    document.getElementById('tgt-id').textContent    = (alert.target_id || '---').substring(0, 10);
+    document.getElementById('tgt-score').textContent = (alert.confidence || '--') + '%';
+    const thr = (alert.threat_level || '').toUpperCase();
+    
+    // We do NOT overwrite tgt-class here, vision_detection sets it to CATEGORY.
+    // If it's just a general alert, we'll let it be.
+    
+    // Spin drone SVG when active
+    document.getElementById('tgt-drone-svg').classList.toggle('active', thr === 'CRITICAL');
+
+    // Crosshair
+    const opacity = (thr === 'CRITICAL' || thr === 'HIGH') ? '1' : '0';
+    document.getElementById('tgt-cross-h').style.opacity = opacity;
+    document.getElementById('tgt-cross-v').style.opacity = opacity;
+
+    // We do NOT overwrite tgt-type here, vision_detection sets it to CLASS TYPE.
+}
+
+function updateTargetFromBlip(blip) {
+    // ── RADAR ONLY: We no longer update the Target Information panel from here ──
+    // This prevents the dummy radar simulator from overwriting real AI detections.
+    
+    // Update alt history for graph (always update graph)
+    altHistory.push(Math.random() * 60 + 40);  // simulated altitude
+    if (altHistory.length > 40) altHistory.shift();
+    drawAltGraph();
+}
+
+// ── Altitude Graph ────────────────────────────────────────────────────────────
+function drawAltGraph() {
+    const canvas = document.getElementById('alt-graph');
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    if (altHistory.length < 2) return;
+    const max = Math.max(...altHistory) + 10;
+    const min = Math.min(...altHistory) - 10;
+
+    ctx.beginPath();
+    ctx.strokeStyle = '#ff1744';
+    ctx.lineWidth = 1.5;
+    altHistory.forEach((v, i) => {
+        const x = (i / (altHistory.length - 1)) * w;
+        const y = h - ((v - min) / (max - min)) * h;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+}
+
+// ── RADAR Canvas ──────────────────────────────────────────────────────────────
+const radarCanvas = document.getElementById('radar-canvas');
+const rCtx = radarCanvas.getContext('2d');
+let sweepAngle = 0;
+
+function resizeRadar() {
+    const p = radarCanvas.parentElement.getBoundingClientRect();
+    radarCanvas.width  = p.width  || 200;
+    radarCanvas.height = p.height || 130;
+}
+window.addEventListener('resize', resizeRadar);
+setTimeout(resizeRadar, 150);
+
+// Blip fade trail
+let blipTrails = [];
+
+function drawRadar() {
+    const w = radarCanvas.width, h = radarCanvas.height;
+    if (!w || !h) { requestAnimationFrame(drawRadar); return; }
+
+    const cx = w / 2, cy = h / 2;
+    const R  = Math.min(cx, cy) - 4;
+
+    // Fade previous frame
+    rCtx.fillStyle = 'rgba(2,6,11,0.25)';
+    rCtx.fillRect(0, 0, w, h);
+
+    // ── Grid rings ──────────────────────────────────────────────────
+    rCtx.strokeStyle = 'rgba(0,229,255,0.15)';
+    rCtx.lineWidth   = 0.5;
+    [0.33, 0.66, 1].forEach(f => {
+        rCtx.beginPath();
+        rCtx.arc(cx, cy, R * f, 0, Math.PI * 2);
+        rCtx.stroke();
+    });
+
+    // ── Cross hairs ──────────────────────────────────────────────────
+    rCtx.strokeStyle = 'rgba(0,229,255,0.1)';
+    rCtx.lineWidth   = 0.5;
+    [[cx,cy-R,cx,cy+R],[cx-R,cy,cx+R,cy]].forEach(([x1,y1,x2,y2]) => {
+        rCtx.beginPath(); rCtx.moveTo(x1,y1); rCtx.lineTo(x2,y2); rCtx.stroke();
+    });
+
+    // ── Sweep line ──────────────────────────────────────────────────
+    sweepAngle = (sweepAngle + 0.025) % (Math.PI * 2);
+    const grad = rCtx.createConicalGradient
+        ? rCtx.createConicalGradient(cx, cy, sweepAngle)
+        : null;
+
+    rCtx.save();
+    rCtx.translate(cx, cy);
+    rCtx.rotate(sweepAngle);
+
+    // Sweep fan
+    const sweepGrad = rCtx.createLinearGradient(0, 0, R, 0);
+    sweepGrad.addColorStop(0,   'rgba(0,230,118,0)');
+    sweepGrad.addColorStop(0.7, 'rgba(0,230,118,0.08)');
+    sweepGrad.addColorStop(1,   'rgba(0,230,118,0.5)');
+    rCtx.beginPath();
+    rCtx.moveTo(0, 0);
+    rCtx.arc(0, 0, R, -0.3, 0);
+    rCtx.closePath();
+    rCtx.fillStyle = sweepGrad;
+    rCtx.fill();
+
+    // Sweep leading edge
+    rCtx.beginPath();
+    rCtx.moveTo(0, 0);
+    rCtx.lineTo(R, 0);
+    rCtx.strokeStyle = 'rgba(0,230,118,0.9)';
+    rCtx.lineWidth   = 1;
+    rCtx.stroke();
+    rCtx.restore();
+
+    // ── Blips ───────────────────────────────────────────────────────
+    const MAX_RANGE = 5000;
+    radarBlips.forEach(blip => {
+        const scaledR = Math.min((blip.range_m / MAX_RANGE) * R, R - 4);
+        // azimuth_rad from app.py: atan2(x,y) — North=0
+        const drawX = cx + scaledR * Math.sin(blip.azimuth_rad);
+        const drawY = cy - scaledR * Math.cos(blip.azimuth_rad);
+
+        const col = blip.threat_level === 'CRITICAL' ? '#ff1744'
+                  : blip.threat_level === 'HIGH'     ? '#ff9100'
+                  : '#00e676';
+
+        // Blip dot
+        rCtx.beginPath();
+        rCtx.arc(drawX, drawY, 3.5, 0, Math.PI * 2);
+        rCtx.fillStyle    = col;
+        rCtx.shadowBlur   = 12;
+        rCtx.shadowColor  = col;
+        rCtx.fill();
+        rCtx.shadowBlur   = 0;
+
+        // Label
+        rCtx.fillStyle    = col;
+        rCtx.font         = '7px Share Tech Mono, monospace';
+        rCtx.fillText(`T-${String(blip.id).padStart(3,'0')}`, drawX + 5, drawY - 4);
+    });
+
+    // ── Center dot ──────────────────────────────────────────────────
+    rCtx.beginPath();
+    rCtx.arc(cx, cy, 3, 0, Math.PI * 2);
+    rCtx.fillStyle = '#00e5ff';
+    rCtx.fill();
+
+    // ── Cardinal Direction Labels ──────────────────────────────────────────
+    rCtx.font = '8px Share Tech Mono, monospace';
+    rCtx.textAlign = 'center';
+    rCtx.fillStyle = 'rgba(255,23,68,0.7)';
+    rCtx.fillText('N', cx, cy - R + 10);
+    rCtx.fillStyle = 'rgba(0,229,255,0.4)';
+    rCtx.fillText('S', cx, cy + R - 4);
+    rCtx.fillText('E', cx + R - 8, cy + 3);
+    rCtx.fillText('W', cx - R + 8, cy + 3);
+
+    // Range labels
+    rCtx.font = '6px Share Tech Mono';
+    rCtx.fillStyle = 'rgba(0,229,255,0.2)';
+    rCtx.fillText('1.7km', cx + R*0.33 + 2, cy - 3);
+    rCtx.fillText('3.3km', cx + R*0.66 + 2, cy - 3);
+    rCtx.fillText('5km', cx + R - 4, cy - 3);
+    rCtx.textAlign = 'start';
+
+    requestAnimationFrame(drawRadar);
+}
+drawRadar();
+
+// ── Sensor Feed Animations ────────────────────────────────────────────────────
+// Note: Thermal uses <img> from /thermal_feed endpoint, no canvas needed.
+// The sensor-thermal panel works via the img#thermal-feed-img element.
+
+// NVG canvas — CINEMATIC: scanlines + vignette + tracking box
+const nvgCanvas = document.getElementById('nvg-canvas');
+const nvgCtx    = nvgCanvas.getContext('2d');
+let nvgFrame = 0;
+
+function animateNVG() {
+    const w = nvgCanvas.width  = nvgCanvas.offsetWidth  || 150;
+    const h = nvgCanvas.height = nvgCanvas.offsetHeight || 80;
+    nvgFrame++;
+
+    // Base green noise
+    const img = nvgCtx.createImageData(w, h);
+    const d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const v = Math.random() * 45 + 10;
+        d[i] = 0; d[i+1] = v * 1.8; d[i+2] = 0; d[i+3] = 255;
+    }
+    nvgCtx.putImageData(img, 0, 0);
+
+    // Vignette
+    const vg = nvgCtx.createRadialGradient(w/2, h/2, Math.min(w,h)*0.25, w/2, h/2, Math.min(w,h)*0.7);
+    vg.addColorStop(0, 'rgba(0,0,0,0)');
+    vg.addColorStop(1, 'rgba(0,0,0,0.7)');
+    nvgCtx.fillStyle = vg;
+    nvgCtx.fillRect(0, 0, w, h);
+
+    // Scanlines
+    nvgCtx.fillStyle = 'rgba(0,0,0,0.15)';
+    for (let y = 0; y < h; y += 3) nvgCtx.fillRect(0, y, w, 1);
+
+    if (simRunning) {
+        // Target blob with IR glow
+        const tx = w*0.5 + Math.sin(nvgFrame*0.03)*12;
+        const ty = h*0.45 + Math.cos(nvgFrame*0.02)*6;
+        const grd = nvgCtx.createRadialGradient(tx, ty, 0, tx, ty, 18);
+        grd.addColorStop(0, 'rgba(200,255,200,1)');
+        grd.addColorStop(0.3, 'rgba(100,255,100,0.6)');
+        grd.addColorStop(1, 'rgba(0,255,0,0)');
+        nvgCtx.fillStyle = grd;
+        nvgCtx.fillRect(tx-18, ty-18, 36, 36);
+
+        // Tracking box
+        nvgCtx.strokeStyle = 'rgba(0,255,0,0.8)';
+        nvgCtx.lineWidth = 1;
+        nvgCtx.setLineDash([3,2]);
+        nvgCtx.strokeRect(tx-14, ty-10, 28, 20);
+        nvgCtx.setLineDash([]);
+
+        // Corner brackets
+        const bsz = 4;
+        nvgCtx.strokeStyle = '#00ff00';
+        nvgCtx.lineWidth = 1.5;
+        [[tx-14,ty-10,bsz,0,0,bsz],[tx+14,ty-10,-bsz,0,0,bsz],[tx-14,ty+10,bsz,0,0,-bsz],[tx+14,ty+10,-bsz,0,0,-bsz]].forEach(([x,y,dx1,dy1,dx2,dy2])=>{
+            nvgCtx.beginPath(); nvgCtx.moveTo(x+dx1,y+dy1); nvgCtx.lineTo(x,y); nvgCtx.lineTo(x+dx2,y+dy2); nvgCtx.stroke();
+        });
+
+        // Coords text
+        nvgCtx.font = '6px Share Tech Mono';
+        nvgCtx.fillStyle = 'rgba(0,255,0,0.7)';
+        nvgCtx.fillText(`TGT ${Math.floor(tx)},${Math.floor(ty)}`, tx-14, ty+20);
+        
+        document.getElementById('nvg-status').style.display = 'none';
+    } else {
+        document.getElementById('nvg-status').style.display = 'block';
+    }
+
+    // Timestamp bottom
+    nvgCtx.font = '5px Share Tech Mono';
+    nvgCtx.fillStyle = 'rgba(0,255,0,0.3)';
+    nvgCtx.fillText('NVG GEN-III', 3, h-3);
+
+    setTimeout(animateNVG, 60);
+}
+animateNVG();
+
+// Acoustic canvas — CINEMATIC: multi-harmonic + FFT bars + glow
+const acCanvas = document.getElementById('acoustic-canvas');
+const acCtx    = acCanvas.getContext('2d');
+let   acPhase  = 0;
+
+function animateAcoustic() {
+    const w = acCanvas.width  = acCanvas.offsetWidth  || 150;
+    const h = acCanvas.height = acCanvas.offsetHeight || 80;
+    
+    // Fade trail
+    acCtx.fillStyle = 'rgba(0,0,0,0.2)';
+    acCtx.fillRect(0, 0, w, h);
+
+    // Grid lines
+    acCtx.strokeStyle = 'rgba(0,229,255,0.06)';
+    acCtx.lineWidth = 0.5;
+    for (let y = 0; y < h; y += 10) { acCtx.beginPath(); acCtx.moveTo(0,y); acCtx.lineTo(w,y); acCtx.stroke(); }
+
+    acPhase += 0.12;
+    const waveH = h * 0.55;
+
+    if (simRunning) {
+        // Layer 1: Blade frequency (primary)
+        acCtx.beginPath();
+        acCtx.strokeStyle = '#00e676';
+        acCtx.lineWidth = 1.5;
+        acCtx.shadowBlur = 6;
+        acCtx.shadowColor = '#00e676';
+        for (let x = 0; x < w; x++) {
+            const t = (x/w)*Math.PI*10 + acPhase;
+            const y = waveH + Math.sin(t)*12 + Math.sin(t*3.7)*4 + Math.sin(t*7)*2;
+            x === 0 ? acCtx.moveTo(x,y) : acCtx.lineTo(x,y);
+        }
+        acCtx.stroke();
+        acCtx.shadowBlur = 0;
+
+        // Layer 2: Motor harmonic (amber)
+        acCtx.beginPath();
+        acCtx.strokeStyle = 'rgba(255,145,0,0.5)';
+        acCtx.lineWidth = 1;
+        for (let x = 0; x < w; x++) {
+            const t = (x/w)*Math.PI*20 + acPhase*1.5;
+            const y = waveH + Math.sin(t)*5 + Math.sin(t*2.3)*3;
+            x === 0 ? acCtx.moveTo(x,y) : acCtx.lineTo(x,y);
+        }
+        acCtx.stroke();
+
+        // Mini FFT bars at bottom
+        const fftH = h * 0.25;
+        const numBins = 32;
+        const binW = w / numBins;
+        for (let i = 0; i < numBins; i++) {
+            const mag = Math.abs(Math.sin(acPhase + i*0.5)) * fftH * 0.8 + Math.random()*3;
+            const hue = mag > fftH*0.5 ? '#ff1744' : '#00e676';
+            acCtx.fillStyle = hue;
+            acCtx.globalAlpha = 0.6;
+            acCtx.fillRect(i*binW, h - mag, binW-1, mag);
+        }
+        acCtx.globalAlpha = 1;
+
+        document.getElementById('acoustic-status').textContent = 'SIGNAL DETECTED';
+        document.getElementById('acoustic-status').style.color = 'var(--accent-green)';
+    } else {
+        // Ambient noise
+        acCtx.beginPath();
+        acCtx.strokeStyle = 'rgba(0,229,255,0.3)';
+        acCtx.lineWidth = 0.8;
+        for (let x = 0; x < w; x++) {
+            const y = waveH + (Math.random()-0.5)*5;
+            x === 0 ? acCtx.moveTo(x,y) : acCtx.lineTo(x,y);
+        }
+        acCtx.stroke();
+        document.getElementById('acoustic-status').textContent = 'LISTENING';
+        document.getElementById('acoustic-status').style.color = 'rgba(0,229,255,.5)';
+    }
+
+    requestAnimationFrame(animateAcoustic);
+}
+animateAcoustic();
+
+// ── LIDAR Point Cloud Animation — CINEMATIC ───────────────────────────────────
+const lidarCanvas = document.getElementById('lidar-canvas');
+const lidarCtx    = lidarCanvas ? lidarCanvas.getContext('2d') : null;
+let lidarAngle    = 0;
+let lidarPoints   = Array.from({length: 60}, () => ({x: Math.random(), y: Math.random(), z: Math.random()}));
+
+function animateLidar() {
+    if (!lidarCtx) { setTimeout(animateLidar, 200); return; }
+    const w = lidarCanvas.width  = lidarCanvas.offsetWidth  || 150;
+    const h = lidarCanvas.height = lidarCanvas.offsetHeight || 80;
+
+    // Fade trail
+    lidarCtx.fillStyle = 'rgba(0,0,0,0.2)';
+    lidarCtx.fillRect(0, 0, w, h);
+
+    // Scanning sweep arc
+    lidarAngle = (lidarAngle + 3) % w;
+    const sweepGrad = lidarCtx.createLinearGradient(lidarAngle - 30, 0, lidarAngle, 0);
+    sweepGrad.addColorStop(0, 'rgba(0,230,118,0)');
+    sweepGrad.addColorStop(1, 'rgba(0,230,118,0.4)');
+    lidarCtx.fillStyle = sweepGrad;
+    lidarCtx.beginPath();
+    lidarCtx.moveTo(lidarAngle, 0);
+    lidarCtx.lineTo(lidarAngle, h);
+    lidarCtx.lineTo(lidarAngle - 30, h);
+    lidarCtx.lineTo(lidarAngle - 30, 0);
+    lidarCtx.fill();
+    
+    lidarCtx.strokeStyle = 'rgba(0,255,150,0.8)';
+    lidarCtx.lineWidth = 1;
+    lidarCtx.beginPath();
+    lidarCtx.moveTo(lidarAngle, 0);
+    lidarCtx.lineTo(lidarAngle, h);
+    lidarCtx.stroke();
+
+    // 3D Point cloud scatter
+    const time = Date.now() * 0.001;
+    lidarCtx.fillStyle = 'rgba(0,230,118,0.6)';
+    lidarPoints.forEach(p => {
+        // Parallax motion
+        let px = (p.x * w + Math.sin(time + p.z*10) * 10) % w;
+        if (px < 0) px += w;
+        const py = p.y * h;
+        
+        const dist = Math.abs(px - lidarAngle);
+        if (dist < 40) {
+            const intensity = 1 - (dist / 40);
+            const size = (p.z * 1.5) + (simRunning ? 1 : 0);
+            lidarCtx.beginPath();
+            lidarCtx.arc(px, py, size, 0, Math.PI * 2);
+            lidarCtx.fillStyle = `rgba(0,255,150,${intensity})`;
+            lidarCtx.fill();
+        }
+    });
+
+    // Target cluster when active
+    if (simRunning) {
+        const cx = w * 0.65 + Math.sin(time*2) * 15;
+        const cy = h * 0.45 + Math.cos(time*1.5) * 8;
+        
+        // Glow
+        lidarCtx.shadowBlur = 10;
+        lidarCtx.shadowColor = '#ff3d00';
+        
+        for (let i = 0; i < 25; i++) {
+            lidarCtx.beginPath();
+            lidarCtx.arc(cx + (Math.random()-0.5)*20, cy + (Math.random()-0.5)*15, 1.5 + Math.random(), 0, Math.PI*2);
+            lidarCtx.fillStyle = `rgba(255,${50+Math.random()*100},0,0.9)`;
+            lidarCtx.fill();
+        }
+        lidarCtx.shadowBlur = 0;
+        
+        // Bounding box for cluster
+        lidarCtx.strokeStyle = 'rgba(255,61,0,0.8)';
+        lidarCtx.setLineDash([2,2]);
+        lidarCtx.strokeRect(cx-15, cy-12, 30, 24);
+        lidarCtx.setLineDash([]);
+        
+        document.getElementById('lidar-status').style.display = 'none';
+    } else {
+        document.getElementById('lidar-status').style.display = 'block';
+    }
+
+    setTimeout(animateLidar, 40);
+}
+animateLidar();
+
+// ── Passive RF Spectrum Analyzer — CINEMATIC ────────────────────────────────
+const passiveCanvas = document.getElementById('passive-canvas');
+const passiveCtx    = passiveCanvas ? passiveCanvas.getContext('2d') : null;
+let passivePhase    = 0;
+let peakHolds       = Array(50).fill(0);
+
+function animatePassiveRF() {
+    if (!passiveCtx) { setTimeout(animatePassiveRF, 200); return; }
+    const w = passiveCanvas.width  = passiveCanvas.offsetWidth  || 150;
+    const h = passiveCanvas.height = passiveCanvas.offsetHeight || 80;
+
+    passiveCtx.fillStyle = 'rgba(0,0,0,0.3)';
+    passiveCtx.fillRect(0, 0, w, h);
+
+    // Grid
+    passiveCtx.strokeStyle = 'rgba(0,229,255,0.1)';
+    passiveCtx.lineWidth = 0.5;
+    for(let y=0; y<h; y+=15) { passiveCtx.beginPath(); passiveCtx.moveTo(0,y); passiveCtx.lineTo(w,y); passiveCtx.stroke(); }
+    for(let x=0; x<w; x+=w/4) { passiveCtx.beginPath(); passiveCtx.moveTo(x,0); passiveCtx.lineTo(x,h); passiveCtx.stroke(); }
+
+    const numBars = 50;
+    const barW = w / numBars;
+    passivePhase += 0.08;
+
+    for (let i = 0; i < numBars; i++) {
+        let barH = Math.random() * 8 + Math.sin(passivePhase + i*0.2)*3;
+
+        if (simRunning) {
+            const freq = i / numBars;
+            // Simulated RF signal peaks with wider spread
+            if (Math.abs(freq - 0.35) < 0.05) barH += 30 + Math.sin(passivePhase * 3.5) * 15; // 2.4GHz
+            if (Math.abs(freq - 0.75) < 0.04) barH += 22 + Math.cos(passivePhase * 4.2) * 12; // 5.8GHz
+            if (Math.abs(freq - 0.15) < 0.03) barH += 15 + Math.sin(passivePhase * 2.1) * 8;  // 900MHz
+        }
+
+        // Decay peak holds
+        if (barH > peakHolds[i]) peakHolds[i] = barH;
+        else peakHolds[i] -= 1;
+        if(peakHolds[i] < 0) peakHolds[i] = 0;
+
+        const x = i * barW;
+        
+        // Gradient Bar
+        const grad = passiveCtx.createLinearGradient(0, h, 0, h - barH);
+        grad.addColorStop(0, 'rgba(0,229,255,0.4)');
+        grad.addColorStop(0.5, barH > 25 ? 'rgba(255,145,0,0.8)' : 'rgba(0,229,255,0.8)');
+        grad.addColorStop(1, barH > 25 ? 'rgba(255,23,68,1)' : 'rgba(0,229,255,1)');
+        
+        passiveCtx.fillStyle = grad;
+        passiveCtx.fillRect(x, h - barH, barW - 1, barH);
+        
+        // Peak line
+        if (peakHolds[i] > 5) {
+            passiveCtx.fillStyle = barH > 25 ? '#ff1744' : '#00e5ff';
+            passiveCtx.fillRect(x, h - peakHolds[i] - 1, barW - 1, 1);
+        }
+    }
+
+    // Frequency labels (Bottom)
+    passiveCtx.fillStyle = 'rgba(0,229,255,0.5)';
+    passiveCtx.font = '6px Share Tech Mono';
+    passiveCtx.fillText('433M', w*0.05, h-2);
+    passiveCtx.fillText('900M', w*0.15, h-2);
+    passiveCtx.fillText('2.4G', w*0.35, h-2);
+    passiveCtx.fillText('5.8G', w*0.75, h-2);
+
+    const statusEl = document.getElementById('passive-status');
+    if (simRunning && statusEl) {
+        statusEl.innerHTML = '<span style="color:var(--accent-red);text-shadow:0 0 5px red;">⚠ ACTIVE RF EMISSION DETECTED ⚠</span>';
+    } else if (statusEl) {
+        statusEl.innerHTML = 'ZERO EMISSION<br>LISTENING REFLECTIONS';
+    }
+
+    setTimeout(animatePassiveRF, 40);
+}
+animatePassiveRF();
+
+// ── Detection Counter Bump Animation ──────────────────────────────────────────
+let _lastDetCount = 0;
+function bumpDetectionCounter(newCount) {
+    if (newCount > _lastDetCount) {
+        const el = document.getElementById('hdr-detections');
+        if (el) { el.classList.remove('count-bump'); void el.offsetWidth; el.classList.add('count-bump'); }
+        _lastDetCount = newCount;
+    }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+fetchVideoList();
+logCommand('MCDIS C2 v3.0 — All systems online');
+logCommand('Ctrl+J=JAM | Ctrl+I=INTERCEPT | Ctrl+T=NET');
+
+// ── AUTO-START VIDEO FEED ON PAGE LOAD ────────────────────────────────────────
+function autoStartVideoFeed() {
+    fetch('/api/videos')
+        .then(r => r.json())
+        .then(videos => {
+            if (!videos || videos.length === 0) {
+                logCommand('[AUTO] No videos found in archive — check video folder', 'elevated');
+                return;
+            }
+            const firstVideo = videos[0];
+            logCommand(`[AUTO] Auto-loading target feed: ${firstVideo}`, 'elevated');
+
+            // Set the select element value
+            const sel = document.getElementById('video-feed-select');
+            if (sel) {
+                const opt = document.createElement('option');
+                opt.value = firstVideo;
+                opt.textContent = firstVideo;
+                opt.selected = true;
+                sel.appendChild(opt);
+            }
+
+            // Call set_video API
+            fetch('/api/set_video', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filename: firstVideo})
+            }).then(r => r.json()).then(d => {
+                if (d.status === 'OK') {
+                    const img = document.getElementById('video-img');
+                    const standby = document.getElementById('standby-msg');
+                    const feedStatus = document.getElementById('feed-status');
+
+                    if (standby) standby.style.display = 'none';
+                    if (img) {
+                        img.style.display = 'block';
+                        img.src = '/video_feed?' + Date.now();
+                    }
+                    if (feedStatus) feedStatus.textContent = '● REC';
+                    logCommand(`[AUTO] FEED ACTIVE: ${d.file} — Detection engine armed`, 'high');
+
+                    // Also set AI auto-engage button to ACTIVE state
+                    const btn = document.getElementById('auto-engage-btn');
+                    if (btn) {
+                        btn.textContent = '« AI AUTO-ENGAGE: ACTIVE »';
+                        btn.style.background = 'rgba(255,23,68,0.2)';
+                        btn.style.borderColor = 'var(--accent-red)';
+                        btn.style.color = 'var(--accent-red)';
+                        btn.style.animation = 'fire-pulse 1s infinite alternate';
+                    }
+                    logCommand('🧠 AI DECISION ENGINE — AUTO-ENGAGE ACTIVE (SERVER-SIDE)', 'high');
+                } else {
+                    logCommand(`[AUTO] Feed load failed: ${d.error}`, 'elevated');
+                }
+            }).catch(e => logCommand(`[AUTO] Set-video error: ${e}`, 'elevated'));
+        })
+        .catch(e => logCommand(`[AUTO] Archive error: ${e}`, 'elevated'));
+}
+
+// Start video 1 second after page loads (allow socket to connect first)
+setTimeout(autoStartVideoFeed, 1000);
+
+// ── REST POLLER: Bypasses Socket.IO for TARGET INFORMATION panel ──
+setInterval(() => {
+    // Cache buster guarantees we ALWAYS hit the server, ignoring local browser cache
+    fetch('/api/latest_target?t=' + Date.now())
+        .then(r => { if (r.status === 204) return null; return r.json(); })
+        .then(data => {
+            if (!data || !data.target_id) return;
+            
+            // Mark vision and sensors as active
+            window._visionLastUpdate = Date.now();
+            _visionActive = true;
+            simRunning = true;
+
+            // Update all target info fields
+            document.getElementById('tgt-id').textContent = data.target_id;
+            document.getElementById('tgt-model').textContent = data.model_name || 'UNKNOWN';
+            document.getElementById('tgt-model').style.color = 'var(--accent-cyan)';
+            document.getElementById('tgt-type').textContent = data.class_type || 'UAV';
+            document.getElementById('tgt-speed').textContent = (data.speed || 0) + ' km/h';
+            document.getElementById('tgt-bearing').textContent = (data.bearing || 0) + '\u00b0';
+            document.getElementById('tgt-score').textContent = (data.confidence || 0) + '%';
+
+            const classEl = document.getElementById('tgt-class');
+            classEl.textContent = data.category || 'DRONE';
+            classEl.style.color = data.category === 'BIRD' ? 'var(--accent-green)' : 'var(--accent-red)';
+            classEl.style.textShadow = '0 0 5px ' + classEl.style.color;
+
+            const iffEl = document.getElementById('tgt-iff');
+            iffEl.textContent = data.iff_status || 'UNKNOWN';
+            iffEl.style.color = data.iff_status === 'HOSTILE' ? 'var(--accent-red)' :
+                                data.iff_status === 'FRIENDLY' ? 'var(--accent-green)' : 'var(--accent-amber)';
+
+            // Cinematic live crop image
+            if (data.crop_b64 || data.has_crop) {
+                const liveImg = document.getElementById('tgt-live-img');
+                const svgWrap = document.getElementById('tgt-drone-svg-wrap');
+                const iffBadge = document.getElementById('tgt-iff-badge');
+                const confOverlay = document.getElementById('tgt-conf-overlay');
+                const schematicWrap = document.getElementById('tgt-schematic-wrap');
+                const aiStatusText = document.getElementById('ai-status-text');
+
+                if (data.crop_b64) {
+                    liveImg.src = 'data:image/jpeg;base64,' + data.crop_b64;
+                } else {
+                    liveImg.src = '/static/crop_live.jpg?t=' + Date.now();
+                }
+                liveImg.classList.add('visible');
+                svgWrap.classList.add('hidden');
+
+                iffBadge.textContent = data.iff_status;
+                iffBadge.style.color = data.iff_status === 'HOSTILE' ? 'var(--accent-red)' : 'var(--accent-green)';
+                iffBadge.style.borderColor = iffBadge.style.color;
+                iffBadge.classList.add('visible');
+
+                confOverlay.textContent = 'CONF: ' + (data.confidence || 0) + '%';
+                confOverlay.classList.add('visible');
+                
+                // Update Captured Targets Gallery
+                targetGalleryUpdate(data);
+            }
+
+            // Compass needle
+            if (data.bearing !== undefined) {
+                const compass = document.getElementById('compass-needle');
+                if (compass) compass.style.transform = 'translate(-50%,-100%) rotate(' + data.bearing + 'deg)';
+                const compassAz = document.getElementById('compass-az');
+                if (compassAz) compassAz.textContent = data.bearing + '\u00b0';
+            }
+
+            // Activate drone SVG spin
+            document.getElementById('tgt-drone-svg').classList.add('active');
+            document.getElementById('tgt-cross-h').style.opacity = '1';
+            document.getElementById('tgt-cross-v').style.opacity = '1';
+        })
+        .catch(() => {}); // Silent fail
+}, 500);
+
+// ── CAPTURED TARGETS GALLERY UPDATE ──
+const _seenTargets = new Set();
+function targetGalleryUpdate(data) {
+    if (!data || !data.crop_b64) return;
+    const tid = data.target_id || "T-000";
+    if (_seenTargets.has(tid)) return; // Only add new targets
+    _seenTargets.add(tid);
+
+    const gallery = document.getElementById('target-gallery');
+    if (!gallery) return;
+
+    const item = document.createElement('div');
+    item.id    = 'gal-' + tid;
+    const threatClass = data.category === 'BIRD' ? 'threat-BIRD' : (data.threat_level === 'CRITICAL' ? 'threat-CRITICAL' : '');
+    
+    // Initial AI ENHANCING state (Cinematic)
+    item.className = 'gallery-item ' + threatClass;
+    item.style.cssText = 'position:relative; width:120px; height:120px; flex-shrink:0; overflow:hidden; background:#000; border:1px solid var(--accent-cyan); box-shadow:0 0 10px rgba(0,229,255,0.2); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);';
+    
+    // Cyber Grid Background
+    const gridBg = document.createElement('div');
+    gridBg.style.cssText = 'position:absolute; inset:0; background-image: linear-gradient(rgba(0,229,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,0.1) 1px, transparent 1px); background-size: 10px 10px; opacity:0.5;';
+    item.appendChild(gridBg);
+
+    // Scanning Laser
+    const laser = document.createElement('div');
+    laser.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:2px; background:#00e5ff; box-shadow:0 0 8px #00e5ff, 0 0 15px #00e5ff; animation: scanLaser 1s ease-in-out infinite alternate;';
+    item.appendChild(laser);
+
+    const aiText = document.createElement('div');
+    aiText.style.cssText = 'position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; font-family:var(--font-mono); font-size:0.65rem; color:var(--accent-cyan); text-align:center; z-index:2; text-shadow:0 0 5px var(--accent-cyan); animation: glitchText 0.3s infinite;';
+    aiText.innerHTML = 'AI ENHANCING...<br><span style="font-size:0.5rem; letter-spacing:2px; color:#fff;">RECONSTRUCTING</span>';
+    item.appendChild(aiText);
+    
+    gallery.insertBefore(item, gallery.firstChild);
+    if (gallery.children.length > 8) gallery.removeChild(gallery.lastChild);
+
+    // Add dynamic keyframes if not exists
+    if (!document.getElementById('cinematic-keyframes')) {
+        const style = document.createElement('style');
+        style.id = 'cinematic-keyframes';
+        style.innerHTML = `
+            @keyframes scanLaser { 0% { top: 0; opacity: 1; } 100% { top: 100%; opacity: 0.5; } }
+            @keyframes imgReveal { 0% { filter: brightness(3) contrast(2) hue-rotate(90deg); transform: scale(1.2); opacity: 0; } 100% { filter: brightness(1) contrast(1.2) hue-rotate(0deg); transform: scale(1); opacity: 1; } }
+            @keyframes glitchText { 0% { transform: translate(0); } 20% { transform: translate(-1px, 1px); } 40% { transform: translate(-1px, -1px); } 60% { transform: translate(1px, 1px); } 80% { transform: translate(1px, -1px); } 100% { transform: translate(0); } }
+        `;
+        document.head.appendChild(style);
+    }
+
+    // Reveal Image
+    setTimeout(() => {
+        item.innerHTML = ''; // Clear loading state
+        item.style.border = data.threat_level === 'CRITICAL' ? '1px solid var(--accent-red)' : '1px solid var(--border-bright)';
+        item.style.boxShadow = data.threat_level === 'CRITICAL' ? '0 0 15px var(--accent-red-glow)' : 'none';
+
+        const img = document.createElement('img');
+        img.src = 'data:image/jpeg;base64,' + data.crop_b64;
+        img.style.cssText = 'width:100%; height:100%; object-fit:cover; animation: imgReveal 0.6s cubic-bezier(0.1, 0.9, 0.2, 1) forwards; filter: grayscale(20%) contrast(1.2);';
+
+        // CRT Overlay on Image
+        const crtOverlay = document.createElement('div');
+        crtOverlay.style.cssText = 'position:absolute; inset:0; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 2px, 3px 100%; pointer-events:none; z-index:1;';
+
+        // Corner Brackets
+        const brackets = document.createElement('div');
+        const bColor = data.threat_level === 'CRITICAL' ? '#ff1744' : '#00e5ff';
+        brackets.style.cssText = `position:absolute; inset:4px; border: 1px solid ${bColor}; opacity:0.6; z-index:2; clip-path: polygon(0 0, 15px 0, 15px 1px, 1px 1px, 1px 15px, 0 15px, 0 calc(100% - 15px), 1px calc(100% - 15px), 1px calc(100% - 1px), 15px calc(100% - 1px), 15px 100%, 0 100%, calc(100% - 15px) 100%, calc(100% - 15px) calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) calc(100% - 15px), 100% calc(100% - 15px), 100% 100%, 100% 15px, calc(100% - 1px) 15px, calc(100% - 1px) 1px, calc(100% - 15px) 1px, calc(100% - 15px) 0, 100% 0);`;
+
+        // REC blinker
+        const recBadge = document.createElement('div');
+        recBadge.style.cssText = 'position:absolute; top:6px; right:6px; width:5px; height:5px; border-radius:50%; background:#ff1744; box-shadow:0 0 6px #ff1744; animation:blink 1s step-start infinite; z-index:3;';
+
+        // Target Data Box
+        const label = document.createElement('div');
+        label.style.cssText = 'position:absolute; bottom:0; left:0; width:100%; padding:4px; background:rgba(0,0,0,0.85); backdrop-filter:blur(2px); border-top:1px solid var(--border-dim); font-family:var(--font-mono); z-index:3; display:flex; flex-direction:column; justify-content:center; align-items:center; line-height:1.2;';
+        
+        const tColor = data.threat_level === 'CRITICAL' ? 'var(--accent-red)' : 'var(--accent-cyan)';
+        label.innerHTML = `
+            <div style="font-size:0.55rem; color:${tColor}; letter-spacing:1px; font-weight:bold;">${tid}</div>
+            <div style="color:#fff; font-size:0.6rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:95%;">${(data.model_name || data.category || 'UNKNOWN').toUpperCase()}</div>
+            <div style="font-size:0.5rem; color:var(--text-dim); margin-top:2px;">MATCH: <span style="color:#fff">${data.confidence || 0}%</span></div>
+        `;
+
+        item.appendChild(img);
+        item.appendChild(crtOverlay);
+        item.appendChild(brackets);
+        item.appendChild(recBadge);
+        item.appendChild(label);
+    }, 1200);
+}
+
+// ── MISSION REPORT GENERATION ──
+async function generateMissionReport() {
+    const btn = document.getElementById('btn-generate-report');
+    const btnText = document.getElementById('report-btn-text');
+    const status = document.getElementById('report-status');
+
+    if (btn.disabled) return;
+
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.borderColor = 'var(--accent-amber)';
+    btnText.textContent = 'GENERATING ENCRYPTED PDF...';
+    status.textContent = 'Compiling target snapshots and telemetry...';
+
+    try {
+        const response = await fetch('/api/generate_report');
+        const data = await response.json();
+
+        if (data.status === 'SUCCESS') {
+            btnText.textContent = 'REPORT GENERATED';
+            btn.style.borderColor = 'var(--accent-green)';
+            status.innerHTML = `<span style="color:var(--accent-green)">Success!</span> Opening report...`;
+            
+            // Trigger download
+            setTimeout(() => {
+                window.open(data.report_url, '_blank');
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.borderColor = 'var(--accent-cyan)';
+                btnText.textContent = 'GENERATE MISSION REPORT (PDF)';
+                status.textContent = 'Finalizes active session intelligence';
+            }, 1500);
+        } else {
+            throw new Error(data.message || 'Generation failed');
+        }
+    } catch (err) {
+        btnText.textContent = 'ERROR GENERATING REPORT';
+        btn.style.borderColor = 'var(--accent-red)';
+        status.innerHTML = `<span style="color:var(--accent-red)">Error:</span> ${err.message}`;
+        
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.borderColor = 'var(--accent-cyan)';
+            btnText.textContent = 'GENERATE MISSION REPORT (PDF)';
+            status.textContent = 'Retry report generation';
+        }, 3000);
+    }
+}
+
+</script>
+</body>
+</html>

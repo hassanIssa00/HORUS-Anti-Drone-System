@@ -1,0 +1,284 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>HORUS SYSTEM</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/horus.css"></head><body>
+<div id="app">
+<!-- ===== TOP BAR ===== -->
+<header id="topbar">
+<div class="tb-left">
+  <div class="logo-icon">🦅</div>
+  <div class="logo-txt"><div class="lt1">HORUS SYSTEM</div><div class="lt2">AI-POWERED ANTI-DRONE DEFENSE</div><div class="lt3">TACTICAL COMMAND DASHBOARD</div></div>
+  <div class="stars">★★★★</div>
+</div>
+<div class="tb-center">
+  <div class="tb-stat"><div class="tbs-l">SYSTEM STATUS</div><div class="tbs-v green">● OPERATIONAL</div></div>
+  <div class="tb-stat"><div class="tbs-l">THREAT LEVEL</div><div class="tbs-v red blink">⚠ CRITICAL 95%</div></div>
+  <div class="tb-stat"><div class="tbs-l">AI CONFIDENCE</div><div class="tbs-v green">97.6%</div></div>
+  <div class="tb-stat"><div class="tbs-l">TIME</div><div class="tbs-v cyan" id="clk">20:42:31</div></div>
+  <div class="tb-stat"><div class="tbs-l">DATE</div><div class="tbs-v">25/05/2025</div></div>
+  <div class="tb-stat"><div class="tbs-l">UPTIME</div><div class="tbs-v" id="upt">02:22:24</div></div>
+</div>
+<div class="tb-right">
+  <button class="tb-btn report-btn" onclick="toggleReport()">📄<br>REPORTS</button>
+  <button class="tb-btn">⚙<br>SETTINGS</button>
+  <button class="tb-btn" style="position:relative">🔔<br>ALERTS<span class="badge">7</span></button>
+  <button class="tb-btn">⏻<br>LOG OUT</button>
+</div>
+</header>
+<!-- ===== NAV TABS ===== -->
+<nav id="navtabs">
+<button class="ntab active">DASHBOARD</button><button class="ntab">TACTICAL MAP</button><button class="ntab">SENSORS</button><button class="ntab">THREATS</button><button class="ntab">WEAPONS</button><button class="ntab">AI CORE</button><button class="ntab">LOGS</button><button class="ntab">MISSION</button>
+</nav>
+<!-- ===== MAIN GRID ===== -->
+<main id="main">
+<!-- LEFT COL -->
+<div id="col-left">
+  <div class="pnl" id="threat-assess">
+    <div class="pnl-t">THREAT LEVEL ASSESSMENT</div>
+    <div class="ta-body">
+      <div class="ta-ring"><canvas id="threatRing" width="120" height="120"></canvas><div class="ta-rc"><div class="ta-label red">CRITICAL</div><div class="ta-pct red">95%</div><div class="ta-sub">RISK LEVEL</div></div></div>
+      <div class="ta-factors">
+        <div class="taf-title">THREAT FACTORS</div>
+        <div class="taf"><span>SIGNAL INTEL</span><span>95%</span></div>
+        <div class="taf"><span>RF SCANNER</span><span>93%</span></div>
+        <div class="taf"><span>ACOUSTIC ARRAY</span><span>92%</span></div>
+        <div class="taf"><span>TRACKING DATA</span><span>96%</span></div>
+        <div class="taf"><span>AI ANALYSIS</span><span>98%</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="pnl" id="sys-health">
+    <div class="pnl-t">SYSTEM HEALTH</div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">VISION SYSTEM</span><div class="sh-bar"><div class="sh-fill" style="width:98%"></div></div><span class="sh-pct">98%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">RF SCANNER</span><div class="sh-bar"><div class="sh-fill" style="width:95%"></div></div><span class="sh-pct">95%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">ACOUSTIC ARRAY</span><div class="sh-bar"><div class="sh-fill" style="width:93%"></div></div><span class="sh-pct">93%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">RADAR SYSTEM</span><div class="sh-bar"><div class="sh-fill" style="width:97%"></div></div><span class="sh-pct">97%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">AI PROCESSOR</span><div class="sh-bar"><div class="sh-fill" style="width:99%"></div></div><span class="sh-pct">99%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">DATABASE</span><div class="sh-bar"><div class="sh-fill" style="width:98%"></div></div><span class="sh-pct">98%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">GPS SIGNAL</span><div class="sh-bar"><div class="sh-fill grn" style="width:100%"></div></div><span class="sh-pct">100%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">COMMUNICATION</span><div class="sh-bar"><div class="sh-fill" style="width:98%"></div></div><span class="sh-pct">98%</span></div>
+    <div class="sh-row"><span class="sh-icon green">●</span><span class="sh-name">POWER SUPPLY</span><div class="sh-bar"><div class="sh-fill grn" style="width:100%"></div></div><span class="sh-pct">100%</span></div>
+  </div>
+  <div class="pnl" id="spatial-radar">
+    <div class="pnl-t">SPATIAL RADAR</div>
+    <div class="sr-body">
+      <canvas id="radarCanvas" width="240" height="240"></canvas>
+      <div class="sr-info">
+        <div><span class="sri-l">RADAR STATUS</span><span class="sri-v green">ACTIVE</span></div>
+        <div><span class="sri-l">SCAN MODE</span><span class="sri-v">360°</span></div>
+        <div><span class="sri-l">RANGE</span><span class="sri-v">5.0 km</span></div>
+        <div><span class="sri-l">RESOLUTION</span><span class="sri-v">HIGH</span></div>
+        <div><span class="sri-l">UPDATE RATE</span><span class="sri-v">0.5s</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="pnl" id="sys-alerts">
+    <div class="pnl-t red-t">SYSTEM ALERTS</div>
+    <div id="alert-log"></div>
+    <button class="alert-btn-all">VIEW ALL ALERTS</button>
+  </div>
+</div>
+<!-- CENTER COL -->
+<div id="col-center">
+  <!-- VIDEO FEED -->
+  <div id="video-feed">
+    <div class="vf-top">
+      <span class="rec blink">● REC</span>
+      <span>MODE <b>OPTICAL</b></span><span>ZOOM <b>1.0X</b></span><span>RESOLUTION <b>1080p</b></span><span>FPS <b>30</b></span><span>TRACKING <b class="green">ON</b></span><span>STABILIZATION <b class="green">ON</b></span>
+    </div>
+    <div class="vf-main">
+      <img id="bgImg" src="https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?w=1200&h=500&fit=crop" crossorigin="anonymous" style="display:none">
+      <canvas id="videoCanvas" width="960" height="420"></canvas>
+      <div class="hud">
+        <div class="hud-alt"><div class="hl">ALT</div><div class="hv">120 m</div></div>
+        <div class="hud-spd"><div class="hl">SPD</div><div class="hv">45 km/h</div></div>
+        <div class="lock-box"><div class="lc tl"></div><div class="lc tr"></div><div class="lc bl"></div><div class="lc br"></div><div class="lock-txt">LOCKED</div></div>
+        <div class="hud-bot"><span>RNG <b class="green">1.2 km</b></span><span>HDG <b class="cyan">270°</b></span></div>
+        <div class="scanl"></div>
+      </div>
+    </div>
+    <div class="vf-bar">
+      <span class="vf-ctrl">⏮ ⏪ ⏩ ⏭ ⏩⏩</span>
+      <div class="vf-prog"><div class="vf-prog-fill"></div></div>
+      <span class="live-dot blink">● LIVE</span>
+    </div>
+  </div>
+  <!-- SENSOR FEEDS -->
+  <div id="sensor-feeds">
+    <div class="pnl-t" style="margin:0 0 4px">LIVE SENSOR FEEDS</div>
+    <div class="sf-row">
+      <div class="sf-item"><div class="sf-label">THERMAL IMAGING</div><canvas id="thermalC" width="150" height="70"></canvas></div>
+      <div class="sf-item"><div class="sf-label">RF SPECTRUM <span class="sf-sub">2,400-2,483 GHz</span></div><canvas id="rfC" width="150" height="70"></canvas></div>
+      <div class="sf-item"><div class="sf-label">ACOUSTIC WAVEFORM</div><canvas id="acousticC" width="150" height="70"></canvas></div>
+      <div class="sf-item"><div class="sf-label">SIGNAL STRENGTH</div><canvas id="signalC" width="150" height="70"></canvas></div>
+      <div class="sf-item"><div class="sf-label">EO/IR CAMERA <span class="sf-sub">ZOOM: 4X</span></div><canvas id="eoirC" width="150" height="70"></canvas></div>
+    </div>
+  </div>
+  <!-- AI DECISION ENGINE -->
+  <div id="ai-engine">
+    <div class="pnl-t" style="text-align:center;margin-bottom:6px;font-size:10px">AI DECISION ENGINE — MISSION OUTCOME</div>
+    <div class="ai-cols">
+      <div class="ai-c">
+        <div class="ai-ct">THREAT ANALYSIS</div>
+        <div class="ai-r"><span class="ai-k">THREAT LEVEL</span><span class="ai-v red">CRITICAL 95%</span></div>
+        <div class="ai-r"><span class="ai-k">THREAT TYPE</span></div><div class="ai-r"><span class="ai-vb">QUADCOPTER</span></div>
+        <div class="ai-r"><span class="ai-k">BEHAVIOR</span><span class="ai-v red">HOSTILE</span></div>
+        <div class="ai-r"><span class="ai-k">TARGET VALUE</span><span class="ai-v">HIGH</span></div>
+        <div class="ai-r"><span class="ai-k">ROE</span><span class="ai-v red">ENGAGE</span></div>
+        <canvas id="droneAiC" width="100" height="70" style="margin:auto;display:block"></canvas>
+      </div>
+      <div class="ai-c">
+        <div class="ai-ct">AI DECISION</div>
+        <div class="ai-r"><span class="ai-k">MISSION OBJECTIVE</span></div>
+        <div class="ai-highlight red">NEUTRALIZE THREAT</div>
+        <div class="ai-r"><span class="ai-k">AI RECOMMENDATION</span><span class="ai-v">ENGAGE</span></div>
+        <div class="ai-r"><span class="ai-k">ENGAGEMENT MODE</span><span class="ai-v">AUTONOMOUS</span></div>
+        <div class="ai-r"><span class="ai-k">CONFIDENCE LEVEL</span><span class="ai-v green">97.6%</span></div>
+        <div class="ai-r"><span class="ai-k">DECISION TIME</span><span class="ai-v" id="decTime">20:42:31</span></div>
+        <div class="ai-seq"><div class="ws on">JAM</div><span>→</span><div class="ws">INTERCEPT</div><span>→</span><div class="ws">NEUTRALIZE</div></div>
+      </div>
+      <div class="ai-c">
+        <div class="ai-ct">ENGAGEMENT PLAN</div>
+        <div class="ai-r"><span class="ai-k">PRIMARY ACTION</span><span class="ai-v green">JAM + DRONE INTERCEPT</span></div>
+        <div class="ai-r"><span class="ai-k">SECONDARY ACTION</span><span class="ai-v gold">LASER DEW (IF NEEDED)</span></div>
+        <div class="ai-r"><span class="ai-k">TERTIARY ACTION</span><span class="ai-v">HPM EMP (IF ESCAPE)</span></div>
+        <div class="ai-r"><span class="ai-k">WEAPON SEQUENCE</span></div>
+        <div class="ai-icons"><div class="aic-i">🔊<br>JAM</div><span>→</span><div class="aic-i">🚁<br>INTERCEPT</div><span>→</span><div class="aic-i">🎯<br>NEUTRALIZE</div></div>
+        <div class="ai-r"><span class="ai-k">COLLATERAL RISK</span><span class="ai-v green">LOW</span></div>
+      </div>
+      <div class="ai-c ai-outcome">
+        <div class="ai-ct">PREDICTED OUTCOME</div>
+        <div class="ai-r"><span class="ai-k">PROBABILITY OF SUCCESS</span></div>
+        <div class="out-ring"><canvas id="outcomeRing" width="100" height="100"></canvas><div class="out-c"><span class="out-pct green">97.6%</span><span class="out-lbl">VERY HIGH</span></div></div>
+        <div class="ai-r"><span class="ai-k">ESTIMATED TIME TO NEUTRALIZE</span></div>
+        <div class="out-time">00:<span id="ntimer">18</span> sec</div>
+        <div class="ai-r"><span class="ai-k">COLLATERAL RISK</span><span class="ai-v green">LOW</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- RIGHT COL -->
+<div id="col-right">
+  <div class="pnl" id="target-info">
+    <div class="pnl-t">TARGET INFORMATION</div>
+    <div class="ti-top">
+      <div class="ti-img"><canvas id="targetImgC" width="160" height="120"></canvas><div class="ti-locked blink-slow">LOCKED</div></div>
+      <div class="ti-data">
+        <div class="tid"><span>TARGET ID</span><span class="cyan">DRONE-027</span></div>
+        <div class="tid"><span>CLASSIFICATION</span><span>QUADCOPTER</span></div>
+        <div class="tid"><span>TYPE</span><span>COMMERCIAL</span></div>
+        <div class="tid"><span>DISTANCE</span><span>1.2 km</span></div>
+        <div class="tid"><span>ALTITUDE</span><span>120 m</span></div>
+        <div class="tid"><span>SPEED</span><span>45 km/h</span></div>
+        <div class="tid"><span>HEADING</span><span>270°</span></div>
+        <div class="tid"><span>THREAT LEVEL</span><span class="red">CRITICAL</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="pnl" id="engage-opts">
+    <div class="pnl-t">ENGAGEMENT OPTIONS — AI ASSISTED</div>
+    <div class="eo-meta">
+      <span>ISR <span class="eo-v">---%</span></span>
+      <span>RECOMMENDED <span class="eo-v cyan">JAM + DRONE</span></span>
+      <span>CONFIDENCE <span class="eo-v green">97.6%</span></span>
+      <span>FUZZYING <span class="eo-v gold">LOW</span></span>
+    </div>
+    <div class="eo-grid">
+      <button class="eb"><div class="eb-i">📡</div><div class="eb-n">RF JAMMER</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🛰</div><div class="eb-n">GPS SPOOFER</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🔊</div><div class="eb-n">ACOUSTIC</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">⚡</div><div class="eb-n">LASER</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🛡</div><div class="eb-n">STANDBY</div><div class="eb-s gold">STANDBY</div></button>
+      <button class="eb"><div class="eb-i">⚔</div><div class="eb-n">ADVERSARIAL</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🪤</div><div class="eb-n">NET-GUN</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">💥</div><div class="eb-n">HPM EMP</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🤝</div><div class="eb-n">COLLAB SWARM</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🔥</div><div class="eb-n">LASER DEW</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">🚁</div><div class="eb-n">INTERCEPTOR CHAIN</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">💻</div><div class="eb-n">CYBER TAKEOVER</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">⚛</div><div class="eb-n">QUANTUM JAM</div><div class="eb-s green">READY</div></button>
+      <button class="eb"><div class="eb-i">👁</div><div class="eb-n">ISR PRE-CHECK</div><div class="eb-s green">READY</div></button>
+    </div>
+  </div>
+  <button id="auto-engage">
+    <div class="ae-t">AI AUTO-ENGAGE</div>
+    <div class="ae-s">●● ACTIVE ●●</div>
+    <div class="ae-n">AI DECISION MAKING ENABLED</div>
+  </button>
+  <div class="pnl" id="cm-status">
+    <div class="pnl-t">LIVE COUNTERMEASURE STATUS</div>
+    <table class="cm-tbl"><tr><th>SYSTEM</th><th>STATUS</th><th>INTENSITY</th><th>EFFECTIVENESS</th></tr>
+    <tr><td>RF JAMMER</td><td class="green">ACTIVE</td><td>80%</td><td class="green">92%</td></tr>
+    <tr><td>GPS SPOOFER</td><td class="green">ACTIVE</td><td>70%</td><td class="green">88%</td></tr>
+    <tr><td>ACOUSTIC DISRUPTOR</td><td class="gold">STANDBY</td><td>---</td><td>---</td></tr>
+    <tr><td>LASER SYSTEM</td><td class="gold">STANDBY</td><td>---</td><td>---</td></tr>
+    </table>
+  </div>
+  <div class="pnl" id="captured-tgt">
+    <div class="pnl-t">CAPTURED TARGETS</div>
+    <div class="ct-row">
+      <div class="ct-item"><canvas id="cap1" width="80" height="55"></canvas><div class="ct-lbl">DRONE-025<br><span>QUADCOPTER</span></div></div>
+      <div class="ct-item"><canvas id="cap2" width="80" height="55"></canvas><div class="ct-lbl">DRONE-026<br><span>FIXED WING</span></div></div>
+      <div class="ct-item"><canvas id="cap3" width="80" height="55"></canvas><div class="ct-lbl">DRONE-024<br><span>QUADCOPTER</span></div></div>
+    </div>
+  </div>
+</div>
+</main>
+<!-- FOOTER -->
+<footer id="footer">
+  <div class="fb"><span>🖥</span> SYSTEM UPTIME <b id="sbupt">02:45:18</b></div>
+  <div class="fb"><span>🔒</span> DATA LINK <b class="green">SECURE</b></div>
+  <div class="fb"><span>🧠</span> AI CORE TEMP <b>42.6 °C</b></div>
+  <div class="fb"><span>🎯</span> MISSION <b>COUNTER DRONE DEFENSE</b></div>
+  <div class="fb"><span>🌍</span> OPERATION AREA <b>SECTOR ALPHA</b></div>
+  <div class="fb"><span>📡</span> DATA RATE <b>2.7 GB/s</b></div>
+  <div class="fb"><span>💾</span> MEMORY USAGE <b>65 %</b></div>
+  <div class="fb"><span>💻</span> CPU USAGE <b>48 %</b></div>
+</footer>
+<!-- REPORT MODAL -->
+<div id="report-modal" class="rpt-modal hidden">
+  <div class="rpt-overlay" onclick="toggleReport()"></div>
+  <div class="rpt-content">
+    <div class="rpt-header">
+      <span class="rpt-title">📄 MISSION INTELLIGENCE REPORT</span>
+      <button class="rpt-close" onclick="toggleReport()">✕</button>
+    </div>
+    <div class="rpt-body">
+      <div class="rpt-section">
+        <div class="rpt-sec-title">REPORT DETAILS</div>
+        <div class="rpt-row"><span class="rpt-k">REPORT TYPE</span><span class="rpt-v">TACTICAL INTELLIGENCE DOSSIER</span></div>
+        <div class="rpt-row"><span class="rpt-k">CLASSIFICATION</span><span class="rpt-v red">TOP SECRET // TACTICAL EYES ONLY</span></div>
+        <div class="rpt-row"><span class="rpt-k">MISSION</span><span class="rpt-v">COUNTER DRONE DEFENSE</span></div>
+        <div class="rpt-row"><span class="rpt-k">OPERATION AREA</span><span class="rpt-v">SECTOR ALPHA</span></div>
+        <div class="rpt-row"><span class="rpt-k">TIMESTAMP</span><span class="rpt-v cyan" id="rptTime">--</span></div>
+        <div class="rpt-row"><span class="rpt-k">REPORT ID</span><span class="rpt-v" id="rptId">--</span></div>
+      </div>
+      <div class="rpt-section">
+        <div class="rpt-sec-title">SESSION SUMMARY</div>
+        <div class="rpt-row"><span class="rpt-k">TOTAL TARGETS DETECTED</span><span class="rpt-v">4</span></div>
+        <div class="rpt-row"><span class="rpt-k">CRITICAL THREATS</span><span class="rpt-v red">3</span></div>
+        <div class="rpt-row"><span class="rpt-k">NEUTRALIZED</span><span class="rpt-v green">2</span></div>
+        <div class="rpt-row"><span class="rpt-k">ACTIVE ENGAGEMENTS</span><span class="rpt-v gold">1</span></div>
+        <div class="rpt-row"><span class="rpt-k">AI DECISIONS EXECUTED</span><span class="rpt-v">12</span></div>
+        <div class="rpt-row"><span class="rpt-k">COUNTERMEASURES DEPLOYED</span><span class="rpt-v green">RF JAMMER, GPS SPOOFER, INTERCEPTOR</span></div>
+      </div>
+      <div class="rpt-section">
+        <div class="rpt-sec-title">ENGAGEMENT LOG</div>
+        <table class="rpt-table">
+          <tr><th>ID</th><th>TARGET</th><th>THREAT</th><th>ACTION</th><th>STATUS</th><th>TIME</th></tr>
+          <tr><td>E-001</td><td>DRONE-027</td><td class="red">CRITICAL</td><td>JAM + INTERCEPT</td><td class="green">ENGAGED</td><td id="rptT1">--</td></tr>
+          <tr><td>E-002</td><td>DRONE-026</td><td class="red">CRITICAL</td><td>RF JAMMER</td><td class="green">NEUTRALIZED</td><td id="rptT2">--</td></tr>
+          <tr><td>E-003</td><td>DRONE-025</td><td class="gold">HIGH</td><td>GPS SPOOFER</td><td class="green">NEUTRALIZED</td><td id="rptT3">--</td></tr>
+          <tr><td>E-004</td><td>DRONE-024</td><td class="red">CRITICAL</td><td>MONITORING</td><td class="gold">TRACKING</td><td id="rptT4">--</td></tr>
+        </table>
+      </div>
+      <div class="rpt-actions">
+        <button class="rpt-gen-btn" onclick="generateReport()">📥 GENERATE PDF REPORT</button>
+        <button class="rpt-gen-btn rpt-html" onclick="openHTMLReport()">🌐 OPEN HTML REPORT</button>
+      </div>
+      <div id="rpt-status" class="rpt-status"></div>
+    </div>
+  </div>
+</div>
+</div>
+<script src="/socket.io/socket.io.js"></script>
+<script src="/horus.js"></script></body></html>

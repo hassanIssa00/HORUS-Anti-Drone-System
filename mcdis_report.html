@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MCDIS Project Report</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 0;
+            padding: 0;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: white;
+            color: black;
+            -webkit-print-color-adjust: exact;
+        }
+
+        /* ── Base Page Layout & Borders ── */
+        .page {
+            width: 210mm;
+            height: 297mm;
+            page-break-after: always;
+            position: relative;
+            background: white;
+            overflow: hidden;
+        }
+
+        .border-outer-1 {
+            position: absolute;
+            top: 10mm; bottom: 10mm; left: 10mm; right: 10mm;
+            border: 0.5px solid #000;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .border-outer-2 {
+            position: absolute;
+            top: 11.5mm; bottom: 11.5mm; left: 11.5mm; right: 11.5mm;
+            border: 0.5px solid #000;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .border-inner-gold {
+            position: absolute;
+            top: 18mm; bottom: 18mm; left: 18mm; right: 18mm;
+            border: 2px solid #b89758; /* Gold color */
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        .border-inner-black {
+            position: absolute;
+            top: 18mm; bottom: 18mm; left: 18mm; right: 18mm;
+            border: 0.5px solid #000;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        /* ── Cover Page Specifics ── */
+        .cover-content {
+            position: absolute;
+            top: 18mm; bottom: 18mm; left: 18mm; right: 18mm;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+
+        .cover-top {
+            flex: 0 0 35%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            padding-top: 10mm;
+        }
+
+        .hiet-logo {
+            width: 140px;
+            margin-bottom: 25px;
+        }
+
+        .cover-title {
+            text-align: center;
+            color: #1a2a44; /* Dark blue */
+            font-size: 26pt;
+            font-weight: 900;
+            margin: 0;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
+        }
+        
+        .title-underline {
+            width: 150px;
+            height: 2px;
+            background-color: #b89758;
+            margin: 15px auto 0 auto;
+        }
+
+        .cover-image-container {
+            flex: 0 0 45%;
+            position: relative;
+            overflow: hidden;
+            border-top: 1px solid #b89758;
+            border-bottom: 1px solid #b89758;
+        }
+
+        .cover-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 20%;
+        }
+
+        .cover-bottom {
+            flex: 1;
+            background: linear-gradient(to bottom, #101c34, #1a2a44); /* Dark blue gradient */
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 30mm 15mm 20mm 15mm;
+            color: white;
+        }
+
+        .prep-block {
+            display: flex;
+            flex-direction: column;
+            font-size: 13pt;
+            line-height: 1.4;
+        }
+
+        .prep-title {
+            color: #b89758; /* Gold */
+            margin-bottom: 5px;
+        }
+
+        .prep-name {
+            font-weight: bold;
+        }
+
+        /* ── Content Pages ── */
+        .content-area {
+            position: absolute;
+            top: 25mm; bottom: 25mm; left: 25mm; right: 25mm;
+            z-index: 10;
+        }
+
+        .page-header-title {
+            text-align: center;
+            font-size: 18pt;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 20mm;
+        }
+
+        .section-title {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #000;
+            margin-top: 10mm;
+            margin-bottom: 5mm;
+        }
+
+        .section-title.with-line {
+            border-bottom: 1px solid #d3d3d3;
+            padding-bottom: 3mm;
+        }
+
+        .content-text {
+            font-size: 11pt;
+            line-height: 1.6;
+            text-align: justify;
+            color: #111;
+            margin-bottom: 5mm;
+        }
+        
+        .content-list {
+            font-size: 11pt;
+            line-height: 1.6;
+            margin-bottom: 5mm;
+            padding-left: 20px;
+        }
+
+        .content-list li {
+            margin-bottom: 2mm;
+            text-align: justify;
+        }
+
+        .page-number {
+            position: absolute;
+            bottom: 6mm;
+            left: 0; right: 0;
+            text-align: center;
+            font-size: 11pt;
+            z-index: 10;
+            color: #000;
+        }
+
+        /* Image embedding in content */
+        .content-img-container {
+            text-align: center;
+            margin: 8mm 0;
+        }
+        .content-img {
+            max-width: 90%;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ================== COVER PAGE ================== -->
+    <div class="page">
+        <!-- Borders -->
+        <div class="border-outer-1"></div>
+        <div class="border-outer-2"></div>
+        <div class="border-inner-gold"></div>
+
+        <!-- Content -->
+        <div class="cover-content">
+            <div class="cover-top">
+                <!-- Using extracted HIET logo -->
+                <img src="file:///C:/Users/hassa/Desktop/New%20folder%20(21)/mcdis/hiet_logo.png" alt="HIET" class="hiet-logo">
+                <h1 class="cover-title">MULTI-MODAL COUNTER-DRONE<br>INTELLIGENCE SYSTEM</h1>
+                <div class="title-underline"></div>
+            </div>
+            
+            <div class="cover-image-container">
+                <!-- Cover generated image -->
+                <img src="file:///C:/Users/hassa/.gemini/antigravity/brain/5dafce24-977f-44a1-b576-d2ef9681ebaf/mcdis_cover_image_1776748255614.png" alt="Tactical C2" class="cover-image">
+            </div>
+
+            <div class="cover-bottom">
+                <div class="prep-block" style="text-align: left;">
+                    <span class="prep-title">Prepared For:</span>
+                    <span class="prep-name">DR / Mohamed Eltaher</span>
+                    <span class="prep-name">ENG / Kholod Hassan</span>
+                </div>
+                <div class="prep-block" style="text-align: right;">
+                    <span class="prep-title">Prepared By:</span>
+                    <span class="prep-name">Hassan Issa</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================== PAGE 2: Introduction & Overview ================== -->
+    <div class="page">
+        <div class="border-outer-1"></div>
+        <div class="border-outer-2"></div>
+        <div class="border-inner-black"></div>
+
+        <div class="content-area">
+            <div class="page-header-title">Multi-Modal Counter-Drone Intelligence System</div>
+            
+            <div class="section-title">Introduction</div>
+            <p class="content-text">
+                The rapid proliferation of Unmanned Aerial Vehicles (UAVs) introduces unprecedented challenges to airspace security, critical infrastructure protection, and tactical military deployments. The Multi-Modal Counter-Drone Intelligence System (MCDIS) is an advanced, integrated Command and Control (C2) platform designed to detect, track, classify, and neutralize hostile drones in real time. 
+            </p>
+            <p class="content-text">
+                Developed specifically for the ITC Egypt 2026 competition, MCDIS utilizes a robust sensor-fusion architecture. Rather than relying on a single detection vector, the system seamlessly integrates computer vision, radio frequency (RF) spectrum analysis, acoustic array signatures, and satellite navigation integrity monitoring to form an impenetrable tactical shield. This ensures high-fidelity situational awareness even in complex or spoofed environments.
+            </p>
+
+            <div class="section-title with-line">Overview of MCDIS Architecture</div>
+            <p class="content-text">
+                The architecture of MCDIS incorporates state-of-the-art software engineering principles, conforming to strict military-grade operational standards. The system consists of the following core components integrated into a unified tactical network:
+            </p>
+            <ul class="content-list">
+                <li><strong>Electronic Warfare & SIGINT Suite:</strong> Analyzes RF (Radio Frequency) to detect FHSS hopping patterns, monitors GPS integrity against spoofing attacks, and executes targeted electronic countermeasures (EMP/Jamming).</li>
+                <li><strong>Acoustic Intelligence Array:</strong> Utilizes Mel-frequency cepstral coefficients (MFCC) to isolate and classify rotor harmonics of quadcopters amidst background noise.</li>
+                <li><strong>Optical Tracking Pipeline:</strong> Employs YOLOv8 artificial intelligence combined with SAHI (Slicing Aided Hyper Inference) for extreme long-range visual detection, paired with ByteTrack for persistent multi-drone tracking.</li>
+                <li><strong>Tactical C2 Dashboard:</strong> A highly responsive Flask/SocketIO interface providing unified situational visualization, threat assessment, database logging, and engagement authorization.</li>
+            </ul>
+        </div>
+        <div class="page-number">2</div>
+    </div>
+
+
+    <!-- ================== PAGE 3: Autonomous Detection Pipelines ================== -->
+    <div class="page">
+        <div class="border-outer-1"></div>
+        <div class="border-outer-2"></div>
+        <div class="border-inner-black"></div>
+
+        <div class="content-area">
+            <div class="section-title">Advanced Detection Pipelines</div>
+            <p class="content-text">
+                To achieve extreme accuracy, the MCDIS project overhauled the standard monolithic detection approaches by implementing an object-oriented, highly parallelized intelligence array.
+            </p>
+            
+            <div class="section-title with-line">Optical & IR Vision Subsystem</div>
+            <p class="content-text">
+                The vision engine is capable of processing multi-spectrum feeds. By integrating SAHI, the platform slices high-resolution video streams, allowing the core YOLO model to capture micro-signatures of distant UAVs that standard detection models fail to see. The pipeline includes an embedded Tactical HUD overlaid directly onto the video feed, calculating framerates, target lock IDs, and UTC timestamps with minimal latency.
+            </p>
+
+            <div class="section-title with-line">Signal Intelligence (SIGINT)</div>
+            <p class="content-text">
+                The RF module runs continuous sweeps across critical drone bands (2.4GHz, 5.8GHz, 900MHz). By identifying unauthorized data links and telemetry protocols (such as OcuSync or ExpressLRS), the system can classify threats even when visual contact is obfuscated by weather or terrain. Additionally, the system continuously verifies satellite orbital coordinates against its local origin to immediately flag and report GPS manipulation strategies employed by hostile units.
+            </p>
+
+            <div class="section-title with-line">Thread-Safe Data Fusion</div>
+            <p class="content-text">
+                Every sensor feeds its telemetry into a centralized, thread-safe SQLite database running in WAL (Write-Ahead Logging) mode. This guarantees that synchronous data streaming from acoustic arrays, optical nodes, and RF scanners does not result in locking bottlenecks, ensuring perfect data integrity for post-operation mission analysis.
+            </p>
+        </div>
+        <div class="page-number">3</div>
+    </div>
+
+
+    <!-- ================== PAGE 4: The C2 Dashboard ================== -->
+    <div class="page">
+        <div class="border-outer-1"></div>
+        <div class="border-outer-2"></div>
+        <div class="border-inner-black"></div>
+
+        <div class="content-area">
+            <div class="section-title">The Tactical C2 Command Dashboard</div>
+            <p class="content-text">
+                MCDIS culminates in the Tactical Command and Control screen. Designed strictly along modern defense contractor UX/UI guidelines, it avoids the pitfalls of amateur prototypes, prioritizing action-oriented telemetry and rapid engagement.
+            </p>
+            <ul class="content-list">
+                <li><strong>Automatic Threat Condition Engine:</strong> Dynamically calculates the operational readiness level (from MINIMAL / CONDITION GREEN to CRITICAL / CONDITION RED) based on real-time event aggregation.</li>
+                <li><strong>Spatial Spectrum Analyzer:</strong> A digitized canvas radar that maps multi-vector threats relative to the user's origin.</li>
+                <li><strong>Secure Engagement Links:</strong> The operator has instantaneous access to authorize RF Jamming (Electronic Countermeasures), manual Target Lock, or deploy an autonomous interceptor drone via WebSocket commands.</li>
+            </ul>
+        </div>
+        <div class="page-number">4</div>
+    </div>
+
+</body>
+</html>
