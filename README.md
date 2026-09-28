@@ -4,7 +4,7 @@
 
 ![HORUS Banner](https://img.shields.io/badge/HORUS-SYSTEM%20V2-00ffcc?style=for-the-badge&logo=shield&logoColor=black)
 ![Status](https://img.shields.io/badge/STATUS-OPERATIONAL%20%2F%20COMBAT--READY-brightgreen?style=for-the-badge)
-![Classification](https://img.shields.io/badge/CLASSIFICATION-TOP%20SECRET%20%2F%20DEFENSE%20SIMULATION-red?style=for-the-badge)
+![Classification](https://img.shields.io/badge/CLASSIFICATION-DEFENSE%20SIMULATION%20%26%20C2-red?style=for-the-badge)
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
@@ -14,97 +14,85 @@
 [![Three.js](https://img.shields.io/badge/Three.js-3D%20Spatial%20Radar-049EF4.svg?logo=three.js&logoColor=white)](https://threejs.org/)
 [![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-5C3EE8.svg?logo=opencv&logoColor=white)](https://opencv.org/)
 
-**Indigenous AI-Powered Multi-Domain Counter-Drone Airspace Defense & Tactical Command System**  
-*Developed for ITC Egypt 2026 & Military Airspace Sovereignty against Tier 1, 2, and 3 UAV Incursions*
+**AI-Powered Multi-Domain Counter-Drone Airspace Defense & Tactical Command System**  
+*Engineered for Airspace Sovereignty against Tier 1, Tier 2, and Tier 3 UAV Incursions*
 
-[English Documentation](#-system-architecture--engineering-specification) • [التقرير التقني الشامل بالعربية](#-ملخص-المشروع-والمنظومة-باللغة-العربية) • [Quick Start](#-quick-start--installation) • [Hardware Roadmap](#-hardware-integration-roadmap)
+[System Architecture](#-system-architecture--engineering-specification) • [Mathematical Formulations](#-mathematical--physical-formulations) • [Directory Structure](#-repository-directory-structure) • [Quick Start](#-quick-start--installation) • [Hardware Roadmap](#-hardware-integration-roadmap)
 
 ---
 
 </div>
 
-## 📑 جدول المحتويات / Table of Contents
-- [🦅 ملخص المشروع والمنظومة باللغة العربية](#-ملخص-المشروع-والمنظومة-باللغة-العربية)
-- [🛡️ System Architecture & Engineering Specification](#️-system-architecture--engineering-specification)
+## 📑 Table of Contents
+- [Executive Summary](#-executive-summary)
+- [System Architecture & Engineering Specification](#-system-architecture--engineering-specification)
   - [Layer 1: Multi-Modal Sensing (The Eyes & Ears)](#layer-1-multi-modal-sensing-the-eyes--ears)
   - [Layer 2: Neural Intelligence & Fusion (The Brain)](#layer-2-neural-intelligence--fusion-the-brain)
   - [Layer 3: Tactical Command & Control (C2 Layer)](#layer-3-tactical-command--control-c2-layer)
   - [Layer 4: Multi-Tiered Response & Neutralization (The Sword)](#layer-4-multi-tiered-response--neutralization-the-sword)
-- [📐 Mathematical & Physical Formulations](#-mathematical--physical-formulations)
-- [📂 Repository Directory Structure](#-repository-directory-structure)
-- [🚀 Quick Start & Installation](#-quick-start--installation)
-- [🎮 Tactical C2 Dashboard Features](#-tactical-c2-dashboard-features)
-- [📊 Version Evolution History](#-version-evolution-history-v10--v18--t2)
-- [📡 Hardware Integration Roadmap](#-hardware-integration-roadmap)
+- [Mathematical & Physical Formulations](#-mathematical--physical-formulations)
+  - [1. Free-Space Path Loss & Jammer-to-Signal Ratio ($J/S$)](#1-free-space-path-loss--jammer-to-signal-ratio-js)
+  - [2. GNSS Doppler Shift Compensation](#2-gnss-doppler-shift-compensation)
+  - [3. Final Run-up Point Navigation (FRPN) Cutoff Intercept](#3-final-run-up-point-navigation-frpn-cutoff-intercept)
+  - [4. Intercept Success Rate (ISR) Probability](#4-intercept-success-rate-isr-probability)
+- [Repository Directory Structure](#-repository-directory-structure)
+- [Quick Start & Installation](#-quick-start--installation)
+- [Tactical C2 Dashboard Features](#-tactical-c2-dashboard-features)
+- [Version Evolution History (v1.0 → v1.8 → T2)](#-version-evolution-history-v10--v18--t2)
+- [Hardware Integration Roadmap](#-hardware-integration-roadmap)
+- [Authors & Acknowledgments](#-authors--acknowledgments)
 
 ---
 
-## 🦅 ملخص المشروع والمنظومة باللغة العربية
+## 📋 Executive Summary
 
-### ما هي منظومة HORUS (MCDIS)؟
-منظومة **HORUS** (المعروفة أيضاً باسم **MCDIS: Multi-Modal Counter-Drone Intelligence System**) هي منصة قيادة وسيطرة تكتيكية وبرمجية عسكرية متكاملة من الدرجة الأولى (**Military-Grade C2 Platform**) تم تصميمها وتطويرها لحماية المنشآت الحيوية والسيادة الجوية من تهديدات الطائرات المسيرة بكافة أصنافها (Tier 1 Small Commercial, Tier 2 FPV Kamikaze, Tier 3 Long-Range Loitering Munitions مثل Shahed-136).
+The **HORUS System** (technically designated as **MCDIS: Multi-Modal Counter-Drone Intelligence System**) is an indigenous, military-grade Counter-Unmanned Aerial System (C-UAS) Command and Control (C2) simulation and operational platform. It was engineered to address the exponential rise of asymmetric low-altitude airspace threats across commercial, tactical, and military domains.
 
-تعمل المنظومة بنظام **البرمجيات المعرفة (Software-Defined C2 Ecosystem)**؛ بحيث تكون هي **"العقل المدبر"** المركزي الذي يستقبل بيانات المستشعرات المتعددة، يحللها بالذكاء الاصطناعي، يحدد هوية التهديد بدقة، ويصدر أوامر التحييد الآلية أو الموجهة عبر واجهة تكتيكية فائقة التطور.
-
----
-
-### 🛡️ الأركان الدفاعية الثلاثة التي بنيت عليها المنظومة:
+Unlike single-sensor commercial countermeasures, HORUS operates as a **Software-Defined Defense Ecosystem**. It serves as the unified intelligence hub bridging heterogeneous sensor feeds (optical, thermal, radar, acoustic, and RF signals) with an automated decision matrix and precision soft-kill/hard-kill effectors.
 
 ```mermaid
 flowchart TD
-    subgraph EarlyWarning["1️⃣ رادار الإنذار المبكر (Early Warning & Radar)"]
-        R1[رادار دوبلر ميكروي] --> R2[مسح بصري MOG2]
-        R2 --> R3[حساسات ترددات الراديو RF]
-        R3 --> R4[مصفوفة رصد صوتية]
+    subgraph EarlyWarning["1️⃣ Early Warning & Detection Layer"]
+        R1[Active Micro-Doppler Radar] --> R2[Visual Motion & Optical Flow]
+        R2 --> R3[Passive RF Multi-Band Scanner]
+        R3 --> R4[Harmonic Acoustic Array]
     end
 
-    subgraph Fusion["🧠 عقل المنظومة (HORUS AI & Fusion Core)"]
-        EarlyWarning --> F1[دمج بيانات المستشعرات Sensor Fusion]
-        F1 --> F2[محرك المنطق الضبابي Fuzzy Logic Engine]
-        F2 --> F3[تنبؤ المسار والحساب الفيزيائي FRPN]
-        F3 --> F4[تقييم قواعد الاشتباك ROE & ISR]
+    subgraph Fusion["🧠 HORUS Neural Fusion & Cognitive Core"]
+        EarlyWarning --> F1[Multi-Sensor Data Fusion Engine]
+        F1 --> F2[Hierarchical Fuzzy Decision Engine]
+        F2 --> F3[MIT Trajectory Extrapolation & FRPN Cutoff]
+        F3 --> F4[Automated Rules of Engagement ROE & ISR Check]
     end
 
-    subgraph DefenseActions["الرد التكتيكي المزدوج (Neutralization)"]
-        F4 -->|تهديد قابل للاختراق اللاسلكي| S1["2️⃣ التحييد الإلكتروني (Soft-Kill)"]
-        F4 -->|درون سلكية / صواريخ / أسراب حرجة| H1["3️⃣ الاعتراض الحركي (Hard-Kill)"]
+    subgraph DefenseActions["Neutralization & Kill-Chain Execution"]
+        F4 -->|RF Dependent / Commercial / Swarm| S1["2️⃣ Soft-Kill Neutralization"]
+        F4 -->|Fiber-Optic / Guided Munition / Critical| H1["3️⃣ Hard-Kill Neutralization"]
         
-        S1 --> S11[تشويش متعدد النطاقات 900MHz / 2.4 / 5.8GHz]
-        S1 --> S12[تزييف إحداثيات GPS/GNSS Spoofing]
-        S1 --> S13[اختراق بروتوكول التحكم Cyber Takeover]
-        S1 --> S14[تعطيل الجيروسكوب بالرنين الصوتي]
+        S1 --> S11[Broadband RF Jamming 900MHz / 2.4GHz / 5.8GHz]
+        S1 --> S12[GNSS Ephemeris Spoofing & Doppler Pull-Off]
+        S1 --> S13[MAVLink Cyber Protocol Takeover]
+        S1 --> S14[Acoustic Gyroscope Resonance Disruption]
         
-        H1 --> H11[سلسلة صيد بالدرونز المقاتلة Interceptor Chain]
-        H1 --> H12[سلاح الليزر الحراري الموجه DEW Laser]
-        H1 --> H13[نبضات الميكروويف عالية القدرة HPM EMP]
+        H1 --> H11[4-Phase Interceptor Drone Squadron]
+        H1 --> H12[Directed Energy Weapon DEW Thermal Laser]
+        H1 --> H13[High-Power Microwave HPM EMP Burst]
     end
 ```
 
-### 🎯 ما تم إنجازه وتطويره بالكامل في هذا المشروع:
-1. **نظام الرؤية والذكاء الاصطناعي (AI Vision Pipeline):**
-   - دمج نموذج **YOLOv8** مع تقنية **SAHI (Slicing Aided Hyper Inference)** لتقطيع الإطارات بدقة، مما مكن المنظومة من رصد الأهداف فائقة الصغر (Micro Drones) على مسافات بعيدة جداً وسط السحب والضوضاء البصرية.
-   - خوارزميات التتبع المستمر المقفل (**Hard-Lock Tracking**) باستخدام **ByteTrack** و **CSRT Tracker** وفلاتر كالمان (**Kalman Filter**) لمنع فقدان الهدف عند المناورة أو الحجب اللحظي.
-   - الرؤية الليلية والحرارية التلقائية (**Auto-Thermal FLIR**) التي تحول البث البصري في الإضاءة المنخفضة إلى نطاق حراري تكتيكي واضح.
-2. **محرك تحليل الحركية والفيزياء (Kinematic Logic Engine):**
-   - تحليل فيزيائي متقدم لسرعة الهدف، وتغير الارتفاع، واستقامة المسار لتمييز الطيور والأجسام العشوائية عن الدرونز والصواريخ، والقضاء على الإنذارات الكاذبة (**False Positives**).
-3. **محرك القرار والمنطق الضبابي (Fuzzy Logic & AI Decision Engine):**
-   - محرك قرار مبني على المنطق الضبابي يقيم 10 مدخلات متزامنة من الحساسات (المسافة، السرعة، المقطع الراداري RCS، قوة إشارة RF، بصمة الصوت، درجة ثقة الكاميرا) ليعطي مؤشر خطر من 0 إلى 100% مع مبررات منطقية واضحة للمشغل.
-   - نموذج تصنيف آلي مدرب (**Random Forest / AdaBoost**) لاتخاذ قرارات التحييد الفورية.
-4. **حسابات احتمالية الاعتراض ومسار النقطة المتقدمة (ISR & FRPN Physics):**
-   - نظام **ISR Pre-Check** لحساب نسبة نجاح الاعتراض فيزيائياً قبل إطلاق أي سلاح.
-   - خوارزمية **FRPN (Final Run-up Point Navigation)** لاعتراض الهدف عند نقطة مستقبلية (Cutoff Point) بدلاً من ملاحقته من الخلف، مما يوفر الطاقة ويقلل زمن التحييد.
-5. **منظومة أسلحة متكاملة (Soft-Kill & Hard-Kill):**
-   - محاكاة فيزيائية واقعية للتشويش الراديوي وتزييف الملاحة (GNSS Ephemeris)، واختراق بروتوكولات MAVLink، ونبضات EMP، وأسلحة الطاقة الموجهة DEW Laser.
-6. **لوحة القيادة والسيطرة التكتيكية (C2 Command Dashboard):**
-   - واجهة مستخدم فائقة التطور بتصميم عسكري زجاجي (**Military Glassmorphism HUD**) مع رادار ثلاثي الأبعاد تفاعلي (**Three.js / HTML5 Canvas**)، بث حي متعدد النوافذ (بصري، حراري، معالج بالذكاء الاصطناعي)، ومؤشرات لحالة جميع المنظومات الفرعية ونظام إنذار رئيسي (**Master Alarm**).
-7. **نظام التقارير الاستخباراتية الآلي (Mission Intelligence Dossier):**
-   - توليد تقارير رسمية بصيغة PDF فور انتهاء المهمة تشمل صور الأهداف الملتقطة حرارياً، إحداثيات الرادار، سجل زمني كامل للأوامر التكتيكية، ونوع السلاح المستخدم.
+### Key Engineering Accomplishments:
+1. **AI Vision Pipeline (YOLOv8 + SAHI)**: Integrated ultra-fast object detection with Slicing Aided Hyper Inference (SAHI) to detect ultra-small and distant targets ("Tiny Target Problem") across high-resolution frames against heavy sky clutter.
+2. **Persistent Hard-Lock Tracking**: Coupled **CSRT**, **ByteTrack**, and a 6-state **Kalman Filter** to maintain target lock-on during sharp kinematic maneuvers and temporary occlusions.
+3. **Kinematic False-Alarm Rejection**: Built-in trajectory linearity and velocity filters that distinguish birds and benign clutter from hostile kamikaze drones and loitering munitions.
+4. **Cognitive Fuzzy Decision Matrix**: A 10-input multi-criteria Fuzzy Logic engine generating transparent threat scores ($0 - 100\%$) alongside human-readable military reasoning.
+5. **Intercept Physics & Predictive Interception (ISR & FRPN)**: Calculated Intercept Success Rate (ISR) before effector dispatch, replacing tail-chasing pursuit with iterative cutoff navigation (Final Run-up Point Navigation).
+6. **Tactical C2 Command Interface**: Fully interactive Glassmorphism HUD featuring real-time 3D spatial radar, multi-stream feeds (optical, thermal FLIR, AI bounding boxes), master condition-red alarms, and automated mission dossier generation (PDF).
 
 ---
 
 ## 🛡️ System Architecture & Engineering Specification
 
-MCDIS operates on a strictly modular **Four-Layer Architecture**, ensuring fault tolerance, zero latency bottlenecks, and deterministic mission execution:
+HORUS follows a strictly modular **Four-Layer Architecture**, ensuring zero latency bottlenecks, full subsystem decoupling, and deterministic operational execution:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -121,7 +109,7 @@ MCDIS operates on a strictly modular **Four-Layer Architecture**, ensuring fault
                                     │
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│                 LAYER 3: TACTICAL C2 & OPERATOR HUD                    │
+│                 LAYER 3: TACTICAL COMMAND & CONTROL (C2)               │
 │  [3D Spatial Radar] [Multi-Feed Stream] [Rules of Engagement (ROE)]    │
 │  [Real-Time Socket.IO] [Central SQLite WAL Audit] [Automated Reports]  │
 └───────────────────────────────────┬────────────────────────────────────┘
@@ -130,61 +118,76 @@ MCDIS operates on a strictly modular **Four-Layer Architecture**, ensuring fault
 ┌────────────────────────────────────────────────────────────────────────┐
 │             LAYER 4: RESPONSE EFFECTORS (COUNTERMEASURES)              │
 │       NON-KINETIC (SOFT-KILL)         │       KINETIC (HARD-KILL)      │
-│  • Cognitive Multi-Band RF Jammer     │  • 4-Phase Interceptor Chain   │
+│  • Multi-Band Broadband Jammer        │  • 4-Phase Interceptor Chain   │
 │  • Dynamic GNSS Ephemeris Spoofer     │  • Directed Energy Laser (DEW) │
 │  • Cyber Protocol Takeover (MAVLink)  │  • High-Power Microwave (HPM)  │
-│  • Acoustic Resonant Disruptor        │  • Collaborative Swarm Hunter  │
+│  • Acoustic Gyro Resonant Disruptor   │  • Collaborative Swarm Hunter  │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Layer 1: Multi-Modal Sensing (The Eyes & Ears)
-- **Multi-Spectral EO/IR**: High-resolution optical daylight feed coupled with an adaptive pseudo-thermal colormap enhancement engine for night operations, dense fog, and heat signature discrimination.
-- **Active Micro-Doppler Radar**: Simulated 360° radar sweep tracking spatial azimuth, elevation, range, and rotor blade micro-Doppler signatures.
-- **Passive RF Scanner**: Multi-band frequency scanning across 900 MHz (Telemetry/LoRa), 1.5 GHz (GNSS L1/L2), 2.4 GHz (Command & Control), and 5.8 GHz (FPV Video Link). Detects Frequency-Hopping Spread Spectrum (FHSS).
-- **Passive Acoustic Harmonic Array**: Rotor harmonic signature detection using Mel-Frequency Cepstral Coefficients (MFCC) to classify acoustic drone profiles up to 500m.
+*   **Multi-Spectral EO/IR Optical Feed**: Real-time daylight video combined with an automated pseudo-thermal FLIR colormap filter that enhances thermal contrast in low-light and nocturnal engagements.
+*   **Active Micro-Doppler Radar Simulation**: Continuous 360° radar sweep computing azimuth, elevation, slant range, and propeller micro-Doppler signatures to isolate rotary blades from biological targets.
+*   **Passive RF Spectrum Scanner**: Continuous monitoring of 4 mission-critical bands:
+    *   **900 MHz**: Telemetry links, long-range LoRa communication.
+    *   **1.5 GHz**: GNSS satellite navigation (GPS L1/L2, GLONASS, BeiDou).
+    *   **2.4 GHz**: Command & Control (C2) channels and Wi-Fi control protocols.
+    *   **5.8 GHz**: High-throughput analog and digital FPV video streams.
+    *   *Frequency-Hopping Detection*: Identifies Frequency-Hopping Spread Spectrum (FHSS) profiles.
+*   **Harmonic Acoustic Array**: Spectral feature extraction using Mel-Frequency Cepstral Coefficients (MFCC) to identify rotor harmonics up to 500 meters in urban canyons.
 
 ### Layer 2: Neural Intelligence & Fusion (The Brain)
-- **SAHI (Slicing Aided Hyper Inference)**: Overcomes the classical computer vision limitation where distant drones appear as 4–12 pixel blobs. By slicing 1080p/4K frames into overlapping windows, the YOLOv8 detector operates at native resolution on small regions.
-- **Persistent Target Locking**: Combination of **CSRT (Discriminative Correlation Filter with Channel and Spatial Reliability)** and **ByteTrack** with a 6-state **Kalman Filter** ($\mathbf{x} = [x, y, z, \dot{x}, \dot{y}, \dot{z}]^T$) ensuring lock-on retention during high-g evasive maneuvers.
-- **Hierarchical Fuzzy Decision Engine**: Multi-criteria inference system running on 10 sensor inputs:
-  $$\text{Inputs} = \{\text{Distance}, \text{Speed}, \text{Altitude}, \text{RCS}, \text{Camera Conf}, \text{Size}, \text{RF Strength}, \text{RF Risk}, \text{Acoustic Match}, \text{Movement Directness}\}$$
-- **ISR Pre-Check Engine**: Calculates intercept feasibility and ranks available effectors based on geometry, speed ratios, and target dependencies.
+*   **SAHI Sliced Hyper-Inference**: Slices 1080p and 4K optical frames into overlapping patches, running YOLOv8 at native crop resolution to detect micro-drones at standoff distances.
+*   **CSRT + ByteTrack & Kalman Filter Tracking**: Implements continuous bounding-box tracking and 3D velocity vectors ($\mathbf{x} = [x, y, z, \dot{x}, \dot{y}, \dot{z}]^T$) to maintain a rigid lock even during erratic flight.
+*   **Kinematic Logic Engine**: Evaluates trajectory linearity, velocity vectors, and altitude changes:
+    *   *Avian / Clutter*: Low speed, random vector deviation $\rightarrow$ filtered out.
+    *   *Commercial UAV*: Moderate speed, hovering capability $\rightarrow$ monitored and targeted.
+    *   *Shahed-136 / Cruise Munition*: High speed ($>180$ km/h), strict straight-line vector $\rightarrow$ escalated to **CRITICAL 95%**.
+*   **Hierarchical Fuzzy Decision Engine**: A multi-criteria inference engine receiving 10 concurrent sensor metrics:
+    $$\text{Inputs} = \{\text{Distance}, \text{Speed}, \text{Altitude}, \text{RCS}, \text{Cam Conf}, \text{Size}, \text{RF Strength}, \text{RF Risk}, \text{Acoustic Match}, \text{Movement Directness}\}$$
+    Outputs an actionable threat score ($0 - 100\%$) and automated kill-chain recommendations.
+*   **Supervised Machine Learning Classifier (`ai_decision_engine.py`)**: Trained Random Forest model utilizing standard scalers and label encoders trained across engagement logs (`ai_decisions.jsonl`).
+*   **FRPN & Predictive Cutoff Calculation**: Calculates the target's future spatial coordinates to vector interceptors for a cutoff interception rather than a tail-chase.
+*   **ISR Pre-Check Engine**: Determines the mathematical probability of intercept before weapon activation (**GO / CAUTION / NO-GO**).
 
 ### Layer 3: Tactical Command & Control (C2 Layer)
-- **Tactical C2 Interface**: Real-time glassmorphism tactical HUD displaying spatial radar, raw optical stream, AI annotated stream, thermal FLIR view, health monitors, threat ring, and active kill-chain.
-- **Automated ROE Engine**: Autonomous evaluation of engagement authorization based on target identification, range threshold, and speed profile.
-- **Cryptographic Audit Log**: Every detection, command, and effector firing is archived in a thread-safe SQLite database (WAL mode enabled).
+*   **Tactical Glassmorphism HUD**: Military-inspired tactical user interface with high-contrast tactical styling, monospaced typography, and real-time responsiveness.
+*   **Interactive 3D Spatial Radar (Three.js & Canvas)**: Visualizes azimuth bearings, target blips, range rings (1 km, 2 km, 3 km, 5 km), and elevation angles.
+*   **Triple Concurrent Video Stream**: Displays raw optical feed, AI-processed telemetry HUD, and thermal FLIR imagery.
+*   **Master Condition-Red Alarm**: Full-dashboard audio-visual alert pulsing upon detection of critical incursions.
+*   **Automated Intelligence Dossier Generator**: Uses FPDF to compile mission reports with target crops, thermal captures, radar coordinates, and engagement timelines.
 
 ### Layer 4: Multi-Tiered Response & Neutralization (The Sword)
 
-| Effector | Class | Range | Target Focus | Operational Mechanism |
+| Effector | Class | Effective Range | Target Profiles | Mechanism of Action |
 | :--- | :---: | :---: | :--- | :--- |
-| **RF Multi-Band Jammer** | Soft-Kill | 5.0 km | Commercial, DJI, Analog FPV | Overwhelms C2 link via high Jammer-to-Signal ratio ($J/S$). |
-| **Quantum / Cognitive Jammer** | Soft-Kill | 6.0 km | Military FHSS / Hopping Links | Real-time adaptive sweep countering frequency-hopping transmitters. |
-| **GNSS Ephemeris Spoofer** | Soft-Kill | 5.0 km | GPS/GLONASS/BeiDou Drones | Synthesizes fake satellite constellation signals; forces Return-To-Home or capture-zone landing. |
-| **Cyber Protocol Hijack** | Soft-Kill | 3.0 km | MAVLink, WiFi Drones | Injects malicious disarm / emergency-land packets into telemetry stream. |
-| **Acoustic Gyro Disruptor** | Soft-Kill | 0.5 km | Micro-Drones, MEMS Gyros | Projects resonant acoustic frequencies matching MEMS sensor natural resonance to cause flight instability. |
-| **4-Phase Interceptor Chain** | Hard-Kill | 8.0 km | Kamikaze, Shahed-136, Swarms | Autonomous interceptor drone launching with net capture or kinetic collision at FRPN cutoff coordinate. |
-| **Directed Energy Laser (DEW)**| Hard-Kill | 3.0 km | Fixed-Wing, High-Speed Munitions | 50kW–100kW laser simulation calculating dwell time and thermal ablation for carbon fiber and aluminum airframes. |
-| **High-Power Microwave (HPM)**| Hard-Kill | 1.5 km | Swarms, Unshielded Electronics | Intense electromagnetic radiation burst frying onboard flight controllers and motor ESCs. |
+| **Broadband RF Jammer** | Soft-Kill | 5.0 km | Commercial, DJI, Analog FPV | Overwhelms receiver antenna using optimal Jammer-to-Signal ($J/S$) ratios. |
+| **Cognitive Quantum Jammer** | Soft-Kill | 6.0 km | Military FHSS / Agile Links | Sweeps hopping frequency slots dynamically based on active RF detection. |
+| **GNSS Ephemeris Spoofer** | Soft-Kill | 5.0 km | GPS, GLONASS, BeiDou Receivers | Synthesizes authentic satellite ephemeris with Doppler offsets to force Return-To-Home or safe-zone landing. |
+| **Cyber Protocol Hijack** | Soft-Kill | 3.0 km | MAVLink, WiFi Drones | Injects malicious telemetry packets commanding immediate disarm or emergency landing. |
+| **Acoustic Gyro Disruptor** | Soft-Kill | 0.5 km | Micro-Drones, MEMS Gyros | Emits resonant sound waves matching MEMS sensor natural resonance to induce catastrophic roll/pitch loss. |
+| **4-Phase Interceptor Chain** | Hard-Kill | 8.0 km | Kamikaze, Shahed-136, Fixed-Wing | Deploys autonomous interceptor drones to intercept targets at FRPN cutoff points using net guns or kinetic collision. |
+| **Directed Energy Laser (DEW)**| Hard-Kill | 3.0 km | High-Speed Fixed-Wing Drones | 50kW–100kW laser simulation computing dwell time and thermal ablation for carbon fiber and aluminum airframes. |
+| **High-Power Microwave (HPM)**| Hard-Kill | 1.5 km | Swarms, Unshielded Electronics | Projects high-energy electromagnetic pulses (EMP) burning out motor ESCs and microcontrollers. |
 
 ---
 
 ## 📐 Mathematical & Physical Formulations
 
 ### 1. Free-Space Path Loss & Jammer-to-Signal Ratio ($J/S$)
-The system calculates the RF jamming efficiency using the radar Friis transmission equation:
+The efficiency of RF jamming is determined using the radar Friis transmission equation:
 $$FSPL(d, f) = 20 \log_{10}(d) + 20 \log_{10}(f) + 20 \log_{10}\left(\frac{4\pi}{c}\right)$$
-The Jammer-to-Signal ratio at the target drone receiver is:
+The Jammer-to-Signal ratio at the target drone receiver is calculated as:
 $$\left(\frac{J}{S}\right)_{\text{dB}} = P_J + G_J - FSPL(d_{\text{jammer}}, f) - \left( P_{\text{controller}} + G_{\text{controller}} - FSPL(d_{\text{controller}}, f) \right)$$
-Jamming is successful when $(J/S)_{\text{dB}} \ge \text{Threshold}_{\text{band}}$.
+Jamming succeeds when:
+$$\left(\frac{J}{S}\right)_{\text{dB}} \ge \text{Threshold}_{\text{band}}$$
 
 ### 2. GNSS Doppler Shift Compensation
-To successfully capture a drone's GPS tracking loop (Pull-Off Spoofing), the synthesized ephemeris signal must match the Doppler frequency shift induced by the target velocity:
+To successfully capture a drone's GPS receiver tracking loop (Pull-Off Spoofing), the synthetic ephemeris signal must match the Doppler shift caused by the target's relative velocity:
 $$\Delta f_D = \frac{v_{\text{target}}}{c} \cdot f_{L1} \quad \text{where } f_{L1} = 1575.42\text{ MHz}$$
 
-### 3. FRPN (Final Run-up Point Navigation) Intercept Solution
-Rather than tail-chasing an incoming target (pure pursuit), the FRPN solver calculates the optimal cutoff intercept point $(x_I, y_I)$ iteratively:
+### 3. Final Run-up Point Navigation (FRPN) Cutoff Intercept
+Rather than tail-chasing a moving target (pure pursuit), the FRPN solver computes the optimal future intercept point $(x_I, y_I)$ iteratively:
 $$\vec{P}_{\text{target}}(T) = \vec{P}_0 + \vec{V}_{\text{target}} \cdot T$$
 $$\|\vec{P}_{\text{target}}(T) - \vec{P}_{\text{interceptor}}\| = V_{\text{interceptor}} \cdot T$$
 The equation is solved iteratively using Newton-Raphson until convergence:
@@ -199,7 +202,7 @@ $$\text{ISR} = \text{clip}\left( \left[ \min\left(\frac{V_i}{V_t}, 1.0\right) \c
 
 ```text
 HORUS-Anti-Drone-System/
-├── README.md                          # Master bilingual system documentation
+├── README.md                          # Master system technical documentation
 ├── requirements.txt                   # Production Python dependencies
 ├── environment.yml                    # Conda environment definition
 ├── .gitignore                         # Configured for clean git tracking
@@ -266,7 +269,7 @@ HORUS-Anti-Drone-System/
 │   └── yolov8m.pt                     # YOLOv8 medium model (49.7 MB)
 │
 ├── docs/                              # Comprehensive documentation & technical reports
-│   ├── MCDIS_Project_Report_AR.md     # تقرير المشروع التقني الشامل بالعربية
+│   ├── MCDIS_Project_Report_AR.md     # Full Project Technical Report (Arabic)
 │   ├── MCDIS_Project_Report_EN.md     # Full English Technical Specification
 │   ├── MCDIS_Full_Technical_Specification_v3.md # Unified Strategic Architecture
 │   ├── MCDIS_Full_System_Guide.md     # A to Z System Guide
@@ -294,7 +297,7 @@ HORUS-Anti-Drone-System/
 ### Prerequisites
 - Python 3.10+ (64-bit recommended)
 - Git
-- NVIDIA GPU with CUDA support (Optional, for real-time YOLOv8 acceleration; CPU mode supported automatically)
+- NVIDIA GPU with CUDA support (Optional, for hardware-accelerated YOLOv8 inference; CPU mode operates automatically)
 
 ### 1. Clone the Repository
 ```bash
@@ -314,13 +317,13 @@ pip install -r requirements.txt
 ```
 
 ### 3. Verify System Health
-Run the diagnostic script to ensure all libraries and modules are verified:
+Run the diagnostic script to verify that all modules, drivers, and models load correctly:
 ```cmd
 DIAGNOSE_SYSTEM.bat
 ```
 
 ### 4. Launch the HORUS C2 Platform
-Simply double-click `START_HORUS_SYSTEM.bat` or run:
+Double-click `START_HORUS_SYSTEM.bat` or run:
 ```bash
 python app.py
 ```
@@ -396,8 +399,8 @@ flowchart LR
 
 ## 👥 Authors & Acknowledgments
 - **Lead Developer & System Architect**: **Hassan Issa** ([@hassanIssa00](https://github.com/hassanIssa00))
-- **Project Initiative**: ITC Egypt 2026 Counter-UAS Tactical Research & Development.
-- **Libraries & Tools**: Ultralytics YOLOv8, SAHI, OpenCV, Flask, Three.js, PyTorch, Scikit-Learn.
+- **Project Scope**: Autonomous Counter-UAS Multi-Modal Defense System Architecture.
+- **Open-Source Technologies**: Ultralytics YOLOv8, SAHI, OpenCV, Flask, Three.js, PyTorch, Scikit-Learn.
 
 ---
 
